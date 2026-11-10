@@ -12,12 +12,14 @@ const variants: Record<Variant, string> = {
 export default function Alert({
   variant = "info",
   children,
+  className = "",
 }: {
   variant?: Variant;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <div className={`rounded-lg border px-4 py-3 text-sm ${variants[variant]}`}>
+    <div className={`rounded-lg border px-4 py-3 text-sm ${variants[variant]} ${className}`}>
       {children}
     </div>
   );

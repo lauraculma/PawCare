@@ -39,7 +39,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void refresh();
+    Promise.resolve().then(() => void refresh());
   }, [refresh]);
 
   const login = useCallback(async (payload: LoginPayload) => {

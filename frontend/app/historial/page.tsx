@@ -12,10 +12,8 @@ import Modal from "@/components/ui/Modal";
 import { Field, Input, Textarea } from "@/components/ui/Field";
 import Alert from "@/components/ui/Alert";
 import Spinner from "@/components/ui/Spinner";
-import { useSession } from "@/components/providers/SessionProvider";
 
 export default function ClinicalRecordsPage() {
-  const { user } = useSession();
   const [records, setRecords] = useState<ClinicalRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +36,10 @@ export default function ClinicalRecordsPage() {
     }
   };
 
-  useEffect(() => { void load(); }, [petIdFilter]);
+  useEffect(() => {
+    Promise.resolve().then(() => void load());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [petIdFilter]);
 
   async function handleSave(data: ClinicalRecordPayload) {
     setSaving(true);

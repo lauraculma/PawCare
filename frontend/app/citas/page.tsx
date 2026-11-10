@@ -57,7 +57,7 @@ export default function AppointmentsPage() {
   };
 
   useEffect(() => {
-    void load();
+    Promise.resolve().then(() => void load());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, status, user?.id]);
 
@@ -101,7 +101,7 @@ export default function AppointmentsPage() {
       <Card className="mt-6">
         <div className="flex flex-wrap items-center gap-3">
           <Field label="" className="m-0 w-full sm:w-64">
-            <Select value={status} onChange={e => { setStatus(e.target.value as any); setPage(0); }}>
+            <Select value={status} onChange={e => { setStatus(e.target.value as AppointmentStatus | ""); setPage(0); }}>
               <option value="">Todos los estados</option>
               {(["SCHEDULED","CONFIRMED","COMPLETED","CANCELLED","NO_SHOW"] as AppointmentStatus[]).map(s => (
                 <option key={s} value={s}>{statusLabels[s]}</option>

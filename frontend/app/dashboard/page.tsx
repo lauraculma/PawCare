@@ -84,9 +84,8 @@ export default function DashboardPage() {
     }
 
     let active = true;
-    setStatsError(null);
-
-    async function loadStats() {
+    Promise.resolve().then(async () => {
+      setStatsError(null);
       try {
         const from = new Date().toISOString();
         const [pets, appointments, alerts] = await Promise.all([
@@ -106,9 +105,7 @@ export default function DashboardPage() {
           setStatsError(getErrorMessage(error));
         }
       }
-    }
-
-    void loadStats();
+    });
     return () => {
       active = false;
     };

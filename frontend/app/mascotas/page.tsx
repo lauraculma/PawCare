@@ -41,7 +41,7 @@ export default function PetsPage() {
   };
 
   useEffect(() => {
-    void load();
+    Promise.resolve().then(() => void load());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
