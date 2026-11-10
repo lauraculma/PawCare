@@ -17,9 +17,10 @@ export default function AgendaPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [date, setDate] = useState<string>(() => new Date().toISOString().slice(0,10));
+  const [date, setDate] = useState<string>("");
 
   const load = async () => {
+    if (!date) return;
     setLoading(true);
     setError(null);
     try {
@@ -35,7 +36,13 @@ export default function AgendaPage() {
   };
 
   useEffect(() => {
-    Promise.resolve().then(() => void load());
+    Promise.resolve().then(() => {
+      if (!date) {
+        setDate(new Date().toISOString().slice(0,10));
+        return;
+      }
+      void load();
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date, user?.id]);
 

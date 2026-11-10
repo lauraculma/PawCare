@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSession } from "@/components/providers/SessionProvider";
 import Alert from "@/components/ui/Alert";
@@ -16,10 +16,8 @@ type Mode = "login" | "register";
 
 export default function AuthPage() {
   const router = useRouter();
-  const search = useSearchParams();
-  const modeParam = (search.get("mode") as Mode) ?? "login";
-  const next = search.get("next") ?? "/dashboard";
-  const [mode, setMode] = useState<Mode>(modeParam);
+  const [mode, setMode] = useState<Mode>("login");
+  const [next] = useState<string>("/dashboard");
   const { user, login, register: registerUser, loading } = useSession();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
