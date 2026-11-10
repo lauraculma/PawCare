@@ -1,10 +1,11 @@
 import Link from "next/link";
 import ApiStatus from "@/components/ApiStatus";
+import { buttonClasses } from "@/components/ui/Button";
 
 const modules = [
   {
     title: "Mascotas",
-    description: "Registra y consulta la información de cada paciente.",
+    description: "Registra y consulta la información de cada paciente.",
     href: "/mascotas",
   },
   {
@@ -14,12 +15,12 @@ const modules = [
   },
   {
     title: "Agenda veterinaria",
-    description: "Consulta la agenda del día e historial de atención.",
+    description: "Consulta la agenda del día e historial de atención.",
     href: "/agenda",
   },
   {
     title: "Collar inteligente",
-    description: "Conoce las características del collar para mascotas.",
+    description: "Conoce las características del collar para mascotas.",
     href: "/collar",
   },
 ];
@@ -33,21 +34,18 @@ export default function Home() {
           Cuidado veterinario organizado en un solo lugar
         </h1>
         <p className="max-w-2xl text-lg text-zinc-600">
-          PawCare centraliza la gestión de mascotas, citas y la agenda de los
-          veterinarios para brindar una atención más clara y oportuna.
+          PawCare centraliza la gestión de mascotas, citas y la agenda de los
+          veterinarios para brindar una atención más clara y oportuna.
         </p>
         <div className="flex flex-wrap gap-3">
-          <Link
-            href="/register"
-            className="rounded-lg bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
-          >
+          <Link href="/login?mode=register" className={buttonClasses("primary", "md")}>
             Crear cuenta
           </Link>
           <Link
             href="/collar"
             className="rounded-lg border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-700 hover:border-emerald-600 hover:text-emerald-700"
           >
-            Ver collar inteligente
+          Ver collar inteligente
           </Link>
         </div>
       </section>
