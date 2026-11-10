@@ -34,7 +34,10 @@ export default function AgendaPage() {
     }
   };
 
-  useEffect(() => { void load(); }, [date, user?.id]);
+  useEffect(() => {
+    Promise.resolve().then(() => void load());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date, user?.id]);
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">

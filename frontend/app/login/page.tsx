@@ -29,7 +29,6 @@ export default function AuthPage() {
     handleSubmit,
     formState: { errors },
     reset,
-    getValues,
   } = useForm();
 
   useEffect(() => {
@@ -40,8 +39,10 @@ export default function AuthPage() {
   }, [user, next, router]);
 
   useEffect(() => {
-    reset();
-    setSubmitError(null);
+    Promise.resolve().then(() => {
+      reset();
+      setSubmitError(null);
+    });
   }, [mode, reset]);
 
   async function onSubmit(data: Record<string, string>) {
