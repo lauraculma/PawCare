@@ -24,9 +24,9 @@ services:
       dockerfile: backend/Dockerfile
     container_name: pawcare-backend
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/pawcare
-      SPRING_DATASOURCE_USERNAME: pawcare
-      SPRING_DATASOURCE_PASSWORD: pawcare
+      DB_URL: jdbc:postgresql://db:5432/pawcare
+      DB_USERNAME: pawcare
+      DB_PASSWORD: pawcare
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
       SPRING_FLYWAY_ENABLED: "true"
       JWT_SECRET: ${JWT_SECRET:-change-me-please-32-chars}
