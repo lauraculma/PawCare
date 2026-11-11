@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { alertsApi, vitalsApi, getErrorMessage } from "@/lib/api";
-import type { Alert, PageResponse, VitalSign } from "@/lib/types";
+import { alertsApi, getErrorMessage } from "@/lib/api";
+import type { Alert, PageResponse } from "@/lib/types";
 import { formatDateTime } from "@/lib/format";
 import { Card } from "@/components/ui/Card";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import { buttonClasses } from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
-import Alert as AlertBox from "@/components/ui/Alert";
+import AlertBox from "@/components/ui/Alert";
 import Spinner from "@/components/ui/Spinner";
 
 export default function AlertsPage() {
@@ -31,7 +31,9 @@ export default function AlertsPage() {
     }
   };
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    Promise.resolve().then(() => void load());
+  }, []);
 
   async function acknowledge(id: number) {
     setAcknowledging(id);

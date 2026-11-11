@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 
-export function Modal({
+export default function Modal({
   open,
   onClose,
   children,
@@ -8,7 +8,7 @@ export function Modal({
 }: {
   open: boolean;
   onClose: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
   title?: string;
 }) {
   useEffect(() => {
