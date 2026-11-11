@@ -4,42 +4,63 @@ import com.pawcare.entity.Appointment;
 import com.pawcare.entity.AppointmentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
+import jakarta.persistence.criteria.Predicate;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
-public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
+public interface AppointmentRepository extends JpaRepository<Appointment, Long>, JpaSpecificationExecutor<Appointment> {
 
-    @Query("""
-            select a from Appointment a
-            where a.pet.owner.id = coalesce(:ownerId, a.pet.owner.id)
-              and a.veterinarian.id = coalesce(:veterinarianId, a.veterinarian.id)
-              and a.pet.id = coalesce(:petId, a.pet.id)
-              and a.status = coalesce(:status, a.status)
-              and a.scheduledAt >= coalesce(:from, a.scheduledAt)
-              and a.scheduledAt <= coalesce(:to, a.scheduledAt)
-            """)
-    Page<Appointment> search(@Param("ownerId") Long ownerId,
-                             @Param("veterinarianId") Long veterinarianId,
-                             @Param("petId") Long petId,
-                             @Param("status") AppointmentStatus status,
-                             @Param("from") Instant from,
-                             @Param("to") Instant to,
-                             Pageable pageable);
+    default Page<Appointment> search(Long ownerId,
+                                     Long veterinarianId,
+                                     Long petId,
+                                     AppointmentStatus status,
+                                     Instant from,
+                                     Instant to,
+                                     Pageable pageable) {
+        Specification<Appointment> specification = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
 
-    @Query("""
-            select (count(a) > 0) from Appointment a
-            where a.veterinarian.id = :veterinarianId
-              and a.status <> :cancelled
-              and a.id <> coalesce(:excludeId, a.id)
-              and a.scheduledAt < :end
-              and a.endAt > :start
-            """)
-    boolean existsConflict(@Param("veterinarianId") Long veterinarianId,
-                           @Param("start") Instant start,
-                           @Param("end") Instant end,
-                           @Param("excludeId") Long excludeId,
-                           @Param("cancelled") AppointmentStatus cancelled);
+            if (ownerId != null) {
+                predicates.add(criteriaBuilder.equal(
+                        root.join("pet").join("owner").get("id"), ownerId));
+            }
+            if (veterinarianId != null) {
+                predicates.add(criteriaBuilder.equal(
+                        root.join("veterinarian").get("id"), veterinarianId));
+            }
+            if (petId != null) {
+                predicates.add(criteriaBuilder.equal(root.join("pet").get("id"), petId));
+            }
+            if (status != null) {
+                predicates.add(criteriaBuilder.equal(root.get("status"), status));
+            }
+            if (from != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("scheduledAt"), from));
+            }
+            if (to != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("scheduledAt"), to));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
+        };
+        return findAll(specification, pageable);
+    }
+
+    boolean existsByVeterinarian_IdAndStatusNotAndScheduledAtLessThanAndEndAtGreaterThan(
+            Long veterinarianId,
+            AppointmentStatus excludedStatus,
+            Instant scheduledAtBefore,
+            Instant endAtAfter);
+
+    boolean existsByVeterinarian_IdAndStatusNotAndScheduledAtLessThanAndEndAtGreaterThanAndIdNot(
+            Long veterinarianId,
+            AppointmentStatus excludedStatus,
+            Instant scheduledAtBefore,
+            Instant endAtAfter,
+            Long excludedId);
 }

@@ -27,6 +27,22 @@ class JwtServiceTest {
         assertThat(jwtService.getExpirationMinutes()).isEqualTo(60);
     }
 
+
+    @Test
+    void rejectsTokenForDisabledUser() {
+        User user = new User();
+        user.setId(12L);
+        user.setEmail("disabled@pawcare.test");
+        user.setRole(Role.OWNER);
+        user.setActive(true);
+
+        String token = jwtService.generateToken(user);
+        UserPrincipal disabledPrincipal = new UserPrincipal(
+                user.getId(), user.getEmail(), null, "Disabled", user.getRole(), false);
+
+        assertThat(jwtService.isTokenValid(token, disabledPrincipal)).isFalse();
+    }
+
     @Test
     void rejectsTokenFromAnotherKey() {
         User user = new User();

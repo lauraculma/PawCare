@@ -13,6 +13,7 @@ import type {
   Pet,
   PetPayload,
   RegisterPayload,
+  RegistrationResponse,
   User,
   VitalSign,
   VitalSignPayload,
@@ -78,8 +79,8 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
-  register: (payload: RegisterPayload) =>
-    request<AuthResponse>("/auth/register", {
+  register: (payload: RegisterPayload): Promise<RegistrationResponse> =>
+    request<RegistrationResponse>("/auth/register", {
       method: "POST",
       body: JSON.stringify(payload),
     }),
@@ -227,6 +228,14 @@ export function getErrorMessage(error: unknown): string {
   }
   return "Ocurrio un error inesperado";
 }
+
+
+export const adminApi = {
+  pendingVeterinarians: (page = 0, size = 20) =>
+    request<PageResponse<User>>(`/admin/veterinarians/pending${toQuery({ page, size, sort: "createdAt,asc" })}`),
+  approveVeterinarian: (id: number) =>
+    request<User>(`/admin/veterinarians/${id}/approve`, { method: "PATCH" }),
+};
 
 export const healthApi = {
   check: () => request<{ status: string; service: string }>("/health"),

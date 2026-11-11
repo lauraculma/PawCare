@@ -1,28 +1,45 @@
--- Seed demo PawCare
--- Users
-INSERT INTO users (full_name, email, password_hash, role, phone, active)
-VALUES 
-  ('Ana García','ana@example.com','$2a$10$8K1p/a0dhrxiOwP9GWKPOeXG5JXK9JkK9JkK9JkK9JkK9JkK9JkK9','OWNER','3001234567',true),
-  ('Dr. Laura Méndez','laura.vet@example.com','$2a$10$8K1p/a0dhrxiOwP9GWKPOeXG5JXK9JkK9JkK9JkK9JkK9JkK9JkK9','VETERINARIAN','3007654321',true)
-ON CONFLICT (email) DO NOTHING;
+-- Datos de demostracion para el esquema actual de PawCare.
+-- Los usuarios deben existir previamente (por ejemplo, ejecutando seed_demo.sh).
+-- Uso: psql ... -v owner_email='test@example.com' -v vet_email='vet@test.com' -f seed_demo.sql
 
--- Pets for owner id 2 and 4
-INSERT INTO pets (owner_id, name, species, breed, birth_date, gender, microchip, status, active)
-VALUES
-  (2,'Luna','Gato','Siamés','2019-03-15','F',NULL,'ACTIVE',true),
-  (2,'Rocky','Perro','Bulldog','2018-07-22','M','987654321012345','ACTIVE',true)
-ON CONFLICT DO NOTHING;
+INSERT INTO pets (owner_id, name, species, breed, birth_date, sex, collar_id, notes, active)
+SELECT u.id, 'Luna', 'Gato', 'Siames', DATE '2019-03-15', 'Hembra', 'COL-001',
+       'Mascota de demostracion', TRUE
+FROM users u
+WHERE lower(u.email) = lower(:'owner_email')
+  AND NOT EXISTS (SELECT 1 FROM pets p WHERE p.collar_id = 'COL-001');
 
--- Appointments demo
-INSERT INTO appointments (pet_id, veterinarian_id, scheduled_at, end_at, duration_minutes, status, reason, created_at, updated_at)
-SELECT p.id, u.id, NOW() + INTERVAL '2 days', NOW() + INTERVAL '2 days 30 minutes', 30, 'SCHEDULED','Control de rutina', NOW(), NOW()
-FROM pets p, users u
-WHERE p.name='Luna' AND u.email='laura.vet@example.com'
-ON CONFLICT DO NOTHING;
+INSERT INTO pets (owner_id, name, species, breed, birth_date, sex, collar_id, notes, active)
+SELECT u.id, 'Rocky', 'Perro', 'Bulldog', DATE '2018-07-22', 'Macho', 'COL-002',
+       'Mascota de demostracion', TRUE
+FROM users u
+WHERE lower(u.email) = lower(:'owner_email')
+  AND NOT EXISTS (SELECT 1 FROM pets p WHERE p.collar_id = 'COL-002');
 
--- Vital signs demo
-INSERT INTO vital_signs (pet_id, collar_id, heart_rate, spo2, temperature_c, activity_level, recorded_at)
-SELECT p.id, 'COL-001', 78, 98, 38.6, 'MODERATE', NOW() - INTERVAL '1 hour'
+INSERT INTO appointments (pet_id, veterinarian_id, scheduled_at, end_at, duration_minutes,
+                          status, reason, notes)
+SELECT p.id, v.id, NOW() + INTERVAL '2 days', NOW() + INTERVAL '2 days 30 minutes',
+       30, 'SCHEDULED', 'Control de rutina', 'Cita de demostracion'
 FROM pets p
-WHERE p.name='Luna'
-ON CONFLICT DO NOTHING;
+JOIN users o ON o.id = p.owner_id
+JOIN users v ON lower(v.email) = lower(:'vet_email')
+WHERE p.collar_id = 'COL-001'
+  AND lower(o.email) = lower(:'owner_email')
+  AND NOT EXISTS (
+      SELECT 1 FROM appointments a
+      WHERE a.pet_id = p.id
+        AND a.veterinarian_id = v.id
+        AND a.reason = 'Control de rutina'
+  );
+
+INSERT INTO vital_signs (pet_id, collar_id, heart_rate, spo2, temperature_c,
+                         activity_level, recorded_at)
+SELECT p.id, p.collar_id, 78, 98, 38.6, 'MODERATE', NOW() - INTERVAL '1 hour'
+FROM pets p
+JOIN users o ON o.id = p.owner_id
+WHERE p.collar_id = 'COL-001'
+  AND lower(o.email) = lower(:'owner_email')
+  AND NOT EXISTS (
+      SELECT 1 FROM vital_signs v
+      WHERE v.pet_id = p.id AND v.recorded_at > NOW() - INTERVAL '2 hours'
+  );

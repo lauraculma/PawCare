@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSession } from "@/components/providers/SessionProvider";
@@ -17,10 +16,22 @@ type Mode = "login" | "register";
 export default function AuthPage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
-  const [next] = useState<string>("/dashboard");
+  const [next, setNext] = useState<string>("/dashboard");
   const { user, login, register: registerUser, loading } = useSession();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  function changeMode(nextMode: Mode) {
+    setMode(nextMode);
+    setSubmitError(null);
+    setSubmitSuccess(null);
+
+    // Keep the URL and the visible form synchronized during client navigation.
+    const params = new URLSearchParams(window.location.search);
+    params.set("mode", nextMode);
+    router.replace(`/login?${params.toString()}`, { scroll: false });
+  }
 
   const {
     register,
@@ -28,6 +39,19 @@ export default function AuthPage() {
     formState: { errors },
     reset,
   } = useForm();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedNext = params.get("next");
+    const requestedMode = params.get("mode");
+
+    if (requestedNext && requestedNext.startsWith("/") && !requestedNext.startsWith("//") && !requestedNext.includes("\\")) {
+      setNext(requestedNext);
+    }
+    if (requestedMode === "register") {
+      setMode("register");
+    }
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -45,6 +69,7 @@ export default function AuthPage() {
 
   async function onSubmit(data: Record<string, string>) {
     setSubmitError(null);
+    setSubmitSuccess(null);
     setBusy(true);
     try {
       if (mode === "login") {
@@ -64,7 +89,16 @@ export default function AuthPage() {
           phone: data.phone?.trim() ? data.phone : undefined,
           role,
         };
-        await registerUser(payload);
+        const registration = await registerUser(payload);
+        if (registration.requiresApproval) {
+          setSubmitSuccess("Tu solicitud de cuenta veterinaria fue recibida. Un administrador debe aprobarla antes de que puedas iniciar sesion. Podras volver a iniciar sesion cuando el administrador apruebe tu cuenta.");
+          setMode("login");
+          const params = new URLSearchParams(window.location.search);
+          params.set("mode", "login");
+          router.replace(`/login?${params.toString()}`, { scroll: false });
+          reset();
+          return;
+        }
       }
       router.push(next);
       router.refresh();
@@ -103,14 +137,14 @@ export default function AuthPage() {
         <div className="mb-6 flex gap-2">
           <button
             type="button"
-            onClick={() => setMode("login")}
+            onClick={() => changeMode("login")}
             className={buttonClasses(mode === "login" ? "primary" : "secondary", "sm")}
           >
             Iniciar sesion
           </button>
           <button
             type="button"
-            onClick={() => setMode("register")}
+            onClick={() => changeMode("register")}
             className={buttonClasses(mode === "register" ? "primary" : "secondary", "sm")}
           >
             Crear cuenta
@@ -127,6 +161,7 @@ export default function AuthPage() {
         </p>
 
         {submitError ? <div className="mt-4"><Alert variant="error">{submitError}</Alert></div> : null}
+        {submitSuccess ? <div className="mt-4"><Alert variant="success">{submitSuccess}</Alert></div> : null}
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
           {mode === "register" ? (
@@ -144,7 +179,7 @@ export default function AuthPage() {
           {errors.email && <p className="text-xs text-red-600">{String(errors.email.message)}</p>}
 
           <Field label="Contraseña" required>
-            <Input type="password" placeholder="••••••••" {...register("password", { required: "Requerido", minLength: { value: 6, message: "Minimo 6 caracteres" } })} />
+            <Input type="password" placeholder="••••••••" {...register("password", { required: "Requerido", minLength: { value: 8, message: "Minimo 8 caracteres" }, maxLength: { value: 100, message: "Maximo 100 caracteres" } })} />
           </Field>
           {errors.password && <p className="text-xs text-red-600">{String(errors.password.message)}</p>}
 
@@ -154,7 +189,7 @@ export default function AuthPage() {
                 <Input placeholder="3001234567" {...register("phone")} />
               </Field>
 
-              <Field label="Rol" required>
+              <Field label="Rol" required hint="Las cuentas veterinarias requieren aprobacion de un administrador antes de iniciar sesion.">
                 <Select {...register("role", { required: "Requerido" })} defaultValue="OWNER">
                   <option value="OWNER">Propietario</option>
                   <option value="VETERINARIAN">Veterinario</option>
@@ -177,16 +212,24 @@ export default function AuthPage() {
           {mode === "login" ? (
             <>
               ¿No tienes cuenta?{" "}
-              <Link href="/login?mode=register" className="font-semibold text-emerald-700 hover:underline">
+              <button
+                type="button"
+                onClick={() => changeMode("register")}
+                className="font-semibold text-emerald-700 hover:underline"
+              >
                 Registrate
-              </Link>
+              </button>
             </>
           ) : (
             <>
               ¿Ya tienes cuenta?{" "}
-              <Link href="/login?mode=login" className="font-semibold text-emerald-700 hover:underline">
+              <button
+                type="button"
+                onClick={() => changeMode("login")}
+                className="font-semibold text-emerald-700 hover:underline"
+              >
                 Inicia sesion
-              </Link>
+              </button>
             </>
           )}
         </p>

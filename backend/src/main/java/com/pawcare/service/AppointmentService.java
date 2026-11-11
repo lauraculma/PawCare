@@ -192,8 +192,15 @@ public class AppointmentService {
         if (!end.isAfter(start)) {
             throw new BadRequestException("La duracion de la cita no es valida");
         }
-        if (appointmentRepository.existsConflict(
-                veterinarianId, start, end, excludeId, AppointmentStatus.CANCELLED)) {
+        boolean hasConflict = excludeId == null
+                ? appointmentRepository
+                        .existsByVeterinarian_IdAndStatusNotAndScheduledAtLessThanAndEndAtGreaterThan(
+                                veterinarianId, AppointmentStatus.CANCELLED, end, start)
+                : appointmentRepository
+                        .existsByVeterinarian_IdAndStatusNotAndScheduledAtLessThanAndEndAtGreaterThanAndIdNot(
+                                veterinarianId, AppointmentStatus.CANCELLED, end, start, excludeId);
+
+        if (hasConflict) {
             throw new ConflictException("El veterinario ya tiene una cita en ese horario");
         }
     }

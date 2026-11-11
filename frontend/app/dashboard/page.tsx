@@ -70,6 +70,11 @@ const quickLinks: Record<Role, { href: string; label: string; description: strin
       label: "Agenda",
       description: "Consulta la agenda general.",
     },
+    {
+      href: "/admin/veterinarios",
+      label: "Aprobaciones",
+      description: "Revisa solicitudes de cuentas veterinarias.",
+    },
   ],
 };
 

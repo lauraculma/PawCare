@@ -54,7 +54,7 @@ export default function PetsPage() {
     setOpen(true);
   }
 
-  const canCreate = user && user.role !== "OWNER";
+  const canCreate = Boolean(user);
 
   async function handleSave(data: PetPayload) {
     setSaving(true);
@@ -223,7 +223,7 @@ function PetForm({
         e.preventDefault();
         onSave({
           ...form,
-          birthDate: form.birthDate ? new Date(form.birthDate).toISOString() : undefined,
+          birthDate: form.birthDate || undefined,
           weightKg: form.weightKg ? Number(form.weightKg) : null,
         });
       }}

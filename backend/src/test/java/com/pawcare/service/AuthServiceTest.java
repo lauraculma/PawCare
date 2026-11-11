@@ -1,6 +1,7 @@
 package com.pawcare.service;
 
 import com.pawcare.dto.auth.AuthResponse;
+import com.pawcare.dto.auth.RegistrationResponse;
 import com.pawcare.dto.auth.LoginRequest;
 import com.pawcare.dto.auth.RegisterRequest;
 import com.pawcare.entity.Role;
@@ -54,13 +55,48 @@ class AuthServiceTest {
         when(jwtService.generateToken(any(User.class))).thenReturn("token");
         when(jwtService.getExpirationMinutes()).thenReturn(120L);
 
-        AuthResponse response = authService.register(new RegisterRequest(
+        RegistrationResponse response = authService.register(new RegisterRequest(
                 "Tutor Nuevo", "Nuevo@PawCare.test", "secreto123", "3000000000", null));
 
+        assertThat(response.requiresApproval()).isFalse();
         assertThat(response.token()).isEqualTo("token");
         assertThat(response.tokenType()).isEqualTo("Bearer");
         assertThat(response.user().email()).isEqualTo("nuevo@pawcare.test");
         assertThat(response.user().role()).isEqualTo(Role.OWNER);
+        assertThat(response.user().approved()).isTrue();
+    }
+
+
+    @Test
+    void registersVeterinarianWithoutIssuingTokenUntilApproved() {
+        when(userRepository.existsByEmailIgnoreCase("vet@pawcare.test")).thenReturn(false);
+        when(passwordEncoder.encode("secreto123")).thenReturn("hash");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User user = invocation.getArgument(0);
+            user.setId(2L);
+            return user;
+        });
+
+        RegistrationResponse response = authService.register(new RegisterRequest(
+                "Veterinario", "vet@pawcare.test", "secreto123", null, Role.VETERINARIAN));
+
+        assertThat(response.requiresApproval()).isTrue();
+        assertThat(response.token()).isNull();
+        assertThat(response.user().role()).isEqualTo(Role.VETERINARIAN);
+        assertThat(response.user().approved()).isFalse();
+    }
+
+    @Test
+    void pendingVeterinarianCannotLogin() {
+        User vet = activeUser();
+        vet.setRole(Role.VETERINARIAN);
+        vet.setApproved(false);
+        when(userRepository.findByEmailIgnoreCase("vet@pawcare.test")).thenReturn(Optional.of(vet));
+        when(passwordEncoder.matches("secreto123", "hash")).thenReturn(true);
+
+        assertThatThrownBy(() -> authService.login(new LoginRequest("vet@pawcare.test", "secreto123")))
+                .isInstanceOf(ForbiddenOperationException.class)
+                .hasMessageContaining("pendiente de aprobacion");
     }
 
     @Test

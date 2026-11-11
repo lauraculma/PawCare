@@ -22,7 +22,9 @@ export default function Navbar() {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
 
-  const links = user ? [...privateLinks, ...publicLinks] : publicLinks;
+  const links = user
+    ? [...privateLinks, ...(user.role === "ADMIN" ? [{ href: "/admin/veterinarios", label: "Aprobaciones" }] : []), ...publicLinks]
+    : publicLinks;
 
   async function handleLogout() {
     setSigningOut(true);

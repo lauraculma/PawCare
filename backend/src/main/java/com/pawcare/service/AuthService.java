@@ -3,6 +3,7 @@ package com.pawcare.service;
 import com.pawcare.dto.auth.AuthResponse;
 import com.pawcare.dto.auth.LoginRequest;
 import com.pawcare.dto.auth.RegisterRequest;
+import com.pawcare.dto.auth.RegistrationResponse;
 import com.pawcare.dto.auth.UserResponse;
 import com.pawcare.entity.Role;
 import com.pawcare.entity.User;
@@ -31,7 +32,7 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public RegistrationResponse register(RegisterRequest request) {
         String email = request.email().trim().toLowerCase();
 
         if (userRepository.existsByEmailIgnoreCase(email)) {
@@ -50,9 +51,13 @@ public class AuthService {
         user.setRole(role);
         user.setPhone(request.phone() == null ? null : request.phone().trim());
         user.setActive(true);
+        user.setApproved(role != Role.VETERINARIAN);
 
         User saved = userRepository.save(user);
-        return buildResponse(saved);
+        if (role == Role.VETERINARIAN) {
+            return RegistrationResponse.pending(UserResponse.from(saved));
+        }
+        return RegistrationResponse.authenticated(buildResponse(saved));
     }
 
     @Transactional(readOnly = true)
@@ -66,6 +71,10 @@ public class AuthService {
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new BadCredentialsException("Credenciales invalidas");
+        }
+
+        if (user.getRole() == Role.VETERINARIAN && !user.isApproved()) {
+            throw new ForbiddenOperationException("Tu cuenta de veterinario esta pendiente de aprobacion por un administrador");
         }
 
         return buildResponse(user);

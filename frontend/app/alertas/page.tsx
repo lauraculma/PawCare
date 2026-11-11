@@ -11,8 +11,11 @@ import { buttonClasses } from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import AlertBox from "@/components/ui/Alert";
 import Spinner from "@/components/ui/Spinner";
+import { useSession } from "@/components/providers/SessionProvider";
 
 export default function AlertsPage() {
+  const { user } = useSession();
+  const canAcknowledge = Boolean(user && user.role !== "OWNER");
   const [alerts, setAlerts] = useState<PageResponse<Alert> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +43,8 @@ export default function AlertsPage() {
     try {
       await alertsApi.acknowledge(id);
       await load();
+    } catch (e) {
+      setError(getErrorMessage(e));
     } finally {
       setAcknowledging(null);
     }
@@ -62,7 +67,9 @@ export default function AlertsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Badge tone={a.severity === "CRITICAL" ? "red" : "amber"}>{a.severity}</Badge>
-                <button disabled={acknowledging===a.id} onClick={()=>acknowledge(a.id)} className={buttonClasses("secondary","sm")}>{acknowledging===a.id ? "Reconociendo..." : "Reconocer"}</button>
+                {canAcknowledge ? (
+                  <button disabled={acknowledging===a.id} onClick={()=>acknowledge(a.id)} className={buttonClasses("secondary","sm")}>{acknowledging===a.id ? "Reconociendo..." : "Reconocer"}</button>
+                ) : null}
               </div>
             </div>
           </Card>

@@ -72,6 +72,8 @@ cd frontend && npm install && npm run dev
 - API: <http://localhost:8080/api>
 - Swagger: <http://localhost:8080/swagger-ui.html>
 
+El backend carga opcionalmente las variables del archivo `.env` ubicado en la raíz del repositorio. Para desarrollo local, `DB_URL`, `DB_USERNAME` y `DB_PASSWORD` deben corresponder al PostgreSQL disponible en el puerto `DB_PORT`.
+
 ## Despliegue con Docker
 
 ```bash
@@ -79,8 +81,7 @@ cp .env.example .env
 docker compose up --build -d
 ```
 
-La guia completa de despliegue, respaldo y solucion de problemas esta en
-[`docs/deployment.md`](docs/deployment.md).
+La aplicación se sirve a través de Nginx en el puerto `APP_PORT` (por defecto 80). El frontend y el backend no necesitan exponerse por separado para el uso normal. La guía completa de despliegue, respaldo y solución de problemas está en [`docs/deployment.md`](docs/deployment.md).
 
 ## Flujo de trabajo
 
@@ -104,3 +105,8 @@ pruebas.
 - Juan Diego Peralta Barbosa
 
 Universidad Distrital Francisco Jose de Caldas.
+
+
+### Cuentas veterinarias
+
+Las cuentas veterinarias creadas desde el registro quedan pendientes de aprobacion. Un administrador debe aprobarlas desde **Aprobaciones** (`/admin/veterinarios`) antes de que puedan iniciar sesion. Consulta `DOCKER.md` para configurar el primer administrador.

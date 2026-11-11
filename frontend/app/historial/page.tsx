@@ -12,8 +12,11 @@ import Modal from "@/components/ui/Modal";
 import { Field, Input, Textarea } from "@/components/ui/Field";
 import Alert from "@/components/ui/Alert";
 import Spinner from "@/components/ui/Spinner";
+import { useSession } from "@/components/providers/SessionProvider";
 
 export default function ClinicalRecordsPage() {
+  const { user } = useSession();
+  const canManage = Boolean(user && user.role !== "OWNER");
   const [records, setRecords] = useState<ClinicalRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +64,7 @@ export default function ClinicalRecordsPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
-      <PageHeader title="Historial clínico" description="Consulta y registra diagnósticos, tratamientos y prescripciones." action={<button onClick={()=>{setEditing(null); setOpen(true);}} className={buttonClasses("primary","md")}>Nuevo registro</button>} />
+      <PageHeader title="Historial clínico" description="Consulta y registra diagnósticos, tratamientos y prescripciones." action={canManage ? <button onClick={()=>{setEditing(null); setOpen(true);}} className={buttonClasses("primary","md")}>Nuevo registro</button> : null} />
 
       <Card className="mt-6">
         <div className="flex flex-wrap items-center gap-3">
@@ -86,16 +89,20 @@ export default function ClinicalRecordsPage() {
               {r.prescription && <p><span className="text-zinc-500">Prescripción:</span> {r.prescription}</p>}
               {r.notes && <p><span className="text-zinc-500">Notas:</span> {r.notes}</p>}
             </div>
-            <div className="mt-4 flex justify-end gap-2">
-              <button onClick={()=>{setEditing(r); setOpen(true);}} className={buttonClasses("secondary","sm")}>Editar</button>
-            </div>
+            {canManage ? (
+              <div className="mt-4 flex justify-end gap-2">
+                <button onClick={()=>{setEditing(r); setOpen(true);}} className={buttonClasses("secondary","sm")}>Editar</button>
+              </div>
+            ) : null}
           </Card>
         ))}
       </div>
 
-      <Modal open={open} onClose={()=>setOpen(false)} title={editing ? "Editar registro clínico" : "Nuevo registro clínico"}>
-        <ClinicalForm initial={editing} onCancel={()=>setOpen(false)} onSave={handleSave} saving={saving} error={formError} />
-      </Modal>
+      {canManage ? (
+        <Modal open={open} onClose={()=>setOpen(false)} title={editing ? "Editar registro clínico" : "Nuevo registro clínico"}>
+          <ClinicalForm initial={editing} onCancel={()=>setOpen(false)} onSave={handleSave} saving={saving} error={formError} />
+        </Modal>
+      ) : null}
     </div>
   );
 }

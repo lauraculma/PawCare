@@ -33,11 +33,20 @@ export interface User {
   email: string;
   role: Role;
   phone?: string | null;
+  approved: boolean;
 }
 
 export interface AuthResponse {
   token: string;
   tokenType: string;
+  expiresInMinutes: number;
+  user: User;
+}
+
+export interface RegistrationResponse {
+  requiresApproval: boolean;
+  token?: string | null;
+  tokenType?: string | null;
   expiresInMinutes: number;
   user: User;
 }

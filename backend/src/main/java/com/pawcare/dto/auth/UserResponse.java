@@ -8,7 +8,8 @@ public record UserResponse(
         String fullName,
         String email,
         Role role,
-        String phone
+        String phone,
+        boolean approved
 ) {
     public static UserResponse from(User user) {
         return new UserResponse(
@@ -16,7 +17,8 @@ public record UserResponse(
                 user.getFullName(),
                 user.getEmail(),
                 user.getRole(),
-                user.getPhone()
+                user.getPhone(),
+                user.isApproved()
         );
     }
 }

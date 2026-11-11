@@ -61,6 +61,16 @@ export default function AppointmentsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, status, user?.id]);
 
+  async function handleCancel(id: number) {
+    setError(null);
+    try {
+      await appointmentsApi.cancel(id);
+      await load();
+    } catch (e) {
+      setError(getErrorMessage(e));
+    }
+  }
+
   async function handleSave(payload: AppointmentPayload) {
     setSaving(true);
     setFormError(null);
@@ -77,8 +87,11 @@ export default function AppointmentsPage() {
         await appointmentsApi.create(payload);
       }
       setOpen(false);
-      setPage(0);
-      await load();
+      if (page !== 0) {
+        setPage(0);
+      } else {
+        await load();
+      }
     } catch (e) {
       setFormError(getErrorMessage(e));
     } finally {
@@ -136,7 +149,7 @@ export default function AppointmentsPage() {
               </div>
               <div className="mt-4 flex justify-end gap-2">
                 <button onClick={() => { setEditing(a); setOpen(true); }} className={buttonClasses("secondary", "sm")}>Editar</button>
-                <button onClick={async () => { await appointmentsApi.cancel(a.id); await load(); }} className={buttonClasses("danger", "sm")}>Cancelar</button>
+                <button onClick={() => void handleCancel(a.id)} className={buttonClasses("danger", "sm")}>Cancelar</button>
               </div>
             </Card>
           ))}

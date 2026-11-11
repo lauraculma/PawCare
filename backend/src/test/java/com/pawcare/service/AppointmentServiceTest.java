@@ -62,8 +62,10 @@ class AppointmentServiceTest {
 
         when(petRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(pet));
         when(userRepository.findById(2L)).thenReturn(Optional.of(vet));
-        when(appointmentRepository.existsConflict(2L, start, start.plus(30, ChronoUnit.MINUTES),
-                null, AppointmentStatus.CANCELLED)).thenReturn(false);
+        when(appointmentRepository
+                .existsByVeterinarian_IdAndStatusNotAndScheduledAtLessThanAndEndAtGreaterThan(
+                        2L, AppointmentStatus.CANCELLED, start.plus(30, ChronoUnit.MINUTES), start))
+                .thenReturn(false);
         when(appointmentRepository.save(any(Appointment.class))).thenAnswer(invocation -> {
             Appointment appointment = invocation.getArgument(0);
             appointment.setId(10L);
@@ -100,8 +102,10 @@ class AppointmentServiceTest {
 
         when(petRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(pet));
         when(userRepository.findById(2L)).thenReturn(Optional.of(vet));
-        when(appointmentRepository.existsConflict(2L, start, start.plus(30, ChronoUnit.MINUTES),
-                null, AppointmentStatus.CANCELLED)).thenReturn(true);
+        when(appointmentRepository
+                .existsByVeterinarian_IdAndStatusNotAndScheduledAtLessThanAndEndAtGreaterThan(
+                        2L, AppointmentStatus.CANCELLED, start.plus(30, ChronoUnit.MINUTES), start))
+                .thenReturn(true);
 
         assertThatThrownBy(() -> appointmentService.create(request(1L, 2L, start), principal(owner)))
                 .isInstanceOf(ConflictException.class);
@@ -115,8 +119,10 @@ class AppointmentServiceTest {
 
         when(petRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(pet));
         when(userRepository.findById(2L)).thenReturn(Optional.of(vet));
-        when(appointmentRepository.existsConflict(2L, start, start.plus(30, ChronoUnit.MINUTES),
-                null, AppointmentStatus.CANCELLED)).thenReturn(false);
+        when(appointmentRepository
+                .existsByVeterinarian_IdAndStatusNotAndScheduledAtLessThanAndEndAtGreaterThan(
+                        2L, AppointmentStatus.CANCELLED, start.plus(30, ChronoUnit.MINUTES), start))
+                .thenReturn(false);
         when(appointmentRepository.save(any(Appointment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         AppointmentResponse response = appointmentService.create(request(1L, null, start), principal(vet));

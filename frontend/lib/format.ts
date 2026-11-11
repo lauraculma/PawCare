@@ -28,14 +28,19 @@ export function formatDate(value?: string | null): string {
   if (!value) {
     return "Sin fecha";
   }
-  return new Intl.DateTimeFormat("es-CO", { dateStyle: "medium" }).format(
-    new Date(value),
-  );
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  const date = dateOnly
+    ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
+    : new Date(value);
+  return new Intl.DateTimeFormat("es-CO", { dateStyle: "medium" }).format(date);
 }
 
 export function formatDateInput(value?: string | null): string {
   if (!value) {
     return "";
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value;
   }
   return new Date(value).toISOString().slice(0, 10);
 }
@@ -71,7 +76,10 @@ export function ageFromBirthDate(value?: string | null): string {
   if (!value) {
     return "Sin dato";
   }
-  const birth = new Date(value);
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  const birth = dateOnly
+    ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
+    : new Date(value);
   const now = new Date();
   let months =
     (now.getFullYear() - birth.getFullYear()) * 12 +

@@ -3,6 +3,7 @@ package com.pawcare.controller;
 import com.pawcare.dto.auth.AuthResponse;
 import com.pawcare.dto.auth.LoginRequest;
 import com.pawcare.dto.auth.RegisterRequest;
+import com.pawcare.dto.auth.RegistrationResponse;
 import com.pawcare.dto.auth.UserResponse;
 import com.pawcare.security.JwtAuthenticationFilter;
 import com.pawcare.security.UserPrincipal;
@@ -36,18 +37,22 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request,
-                                                 HttpServletResponse response) {
-        AuthResponse auth = authService.register(request);
-        addTokenCookie(response, auth);
-        return ResponseEntity.status(201).body(auth);
+    public ResponseEntity<RegistrationResponse> register(@Valid @RequestBody RegisterRequest request,
+                                                          HttpServletResponse response) {
+        RegistrationResponse registration = authService.register(request);
+        if (registration.token() != null) {
+            addTokenCookie(response, registration.token(), registration.expiresInMinutes());
+        } else {
+            clearTokenCookie(response);
+        }
+        return ResponseEntity.status(201).body(registration);
     }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request,
                                               HttpServletResponse response) {
         AuthResponse auth = authService.login(request);
-        addTokenCookie(response, auth);
+        addTokenCookie(response, auth.token(), auth.expiresInMinutes());
         return ResponseEntity.ok(auth);
     }
 
@@ -69,13 +74,24 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-    private void addTokenCookie(HttpServletResponse response, AuthResponse auth) {
-        ResponseCookie cookie = ResponseCookie.from(JwtAuthenticationFilter.COOKIE_NAME, auth.token())
+    private void clearTokenCookie(HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie.from(JwtAuthenticationFilter.COOKIE_NAME, "")
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .path("/")
                 .sameSite("Lax")
-                .maxAge(Duration.ofMinutes(auth.expiresInMinutes()))
+                .maxAge(Duration.ZERO)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    private void addTokenCookie(HttpServletResponse response, String token, long expiresInMinutes) {
+        ResponseCookie cookie = ResponseCookie.from(JwtAuthenticationFilter.COOKIE_NAME, token)
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/")
+                .sameSite("Lax")
+                .maxAge(Duration.ofMinutes(expiresInMinutes))
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }

@@ -7,6 +7,9 @@ const protectedPrefixes = [
   "/citas",
   "/agenda",
   "/pacientes",
+  "/admin",
+  "/alertas",
+  "/historial",
 ];
 
 export function proxy(request: NextRequest) {
@@ -21,13 +24,6 @@ export function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
-  }
-
-  if ((pathname === "/login" || pathname === "/register") && token) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    url.search = "";
     return NextResponse.redirect(url);
   }
 

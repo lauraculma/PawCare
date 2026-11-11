@@ -2,7 +2,7 @@ FROM eclipse-temurin:21-jdk-jammy AS build
 WORKDIR /app
 COPY backend/pom.xml backend/
 COPY backend ./
-RUN ./mvnw -q -DskipTests package
+RUN chmod +x ./mvnw && ./mvnw -q -DskipTests package
 
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
