@@ -11,10 +11,10 @@ public interface ClinicalRecordRepository extends JpaRepository<ClinicalRecord, 
 
     @Query("""
             select c from ClinicalRecord c
-            where (:ownerId is null or c.pet.owner.id = :ownerId)
-              and (:petId is null or c.pet.id = :petId)
-              and (:veterinarianId is null or c.veterinarian.id = :veterinarianId)
-              and (:appointmentId is null or c.appointment.id = :appointmentId)
+            where c.pet.owner.id = coalesce(:ownerId, c.pet.owner.id)
+              and c.pet.id = coalesce(:petId, c.pet.id)
+              and c.veterinarian.id = coalesce(:veterinarianId, c.veterinarian.id)
+              and c.appointment.id = coalesce(:appointmentId, c.appointment.id)
             """)
     Page<ClinicalRecord> search(@Param("ownerId") Long ownerId,
                                 @Param("petId") Long petId,

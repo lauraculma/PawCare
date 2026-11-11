@@ -15,7 +15,7 @@ public interface PetRepository extends JpaRepository<Pet, Long> {
             select p from Pet p
             where p.active = true
               and (:ownerId is null or p.owner.id = :ownerId)
-              and (:search is null or lower(p.name) like lower(concat('%', :search, '%')))
+              and (:search is null or lower(p.name) like :search)
             """)
     Page<Pet> search(@Param("ownerId") Long ownerId,
                      @Param("search") String search,

@@ -74,7 +74,9 @@ public class VitalSignService {
                                         UserPrincipal principal, Pageable pageable) {
         Pet pet = findActivePet(petId);
         assertPetAccess(pet, principal);
-        return vitalSignRepository.search(petId, from, to, pageable)
+        Instant fromEffective = from == null ? Instant.parse("0001-01-01T00:00:00Z") : from;
+        Instant toEffective = to == null ? Instant.parse("9999-12-31T23:59:59Z") : to;
+        return vitalSignRepository.search(petId, fromEffective, toEffective, pageable)
                 .map(vital -> VitalSignResponse.from(vital, List.of()));
     }
 

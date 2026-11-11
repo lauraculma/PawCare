@@ -11,9 +11,9 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
 
     @Query("""
             select a from Alert a
-            where (:ownerId is null or a.pet.owner.id = :ownerId)
-              and (:petId is null or a.pet.id = :petId)
-              and (:acknowledged is null or a.acknowledged = :acknowledged)
+            where a.pet.owner.id = coalesce(:ownerId, a.pet.owner.id)
+              and a.pet.id = coalesce(:petId, a.pet.id)
+              and a.acknowledged = coalesce(:acknowledged, a.acknowledged)
             """)
     Page<Alert> search(@Param("ownerId") Long ownerId,
                        @Param("petId") Long petId,

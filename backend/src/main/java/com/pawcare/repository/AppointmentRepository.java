@@ -14,12 +14,12 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     @Query("""
             select a from Appointment a
-            where (:ownerId is null or a.pet.owner.id = :ownerId)
-              and (:veterinarianId is null or a.veterinarian.id = :veterinarianId)
-              and (:petId is null or a.pet.id = :petId)
-              and (:status is null or a.status = :status)
-              and (:from is null or a.scheduledAt >= :from)
-              and (:to is null or a.scheduledAt <= :to)
+            where a.pet.owner.id = coalesce(:ownerId, a.pet.owner.id)
+              and a.veterinarian.id = coalesce(:veterinarianId, a.veterinarian.id)
+              and a.pet.id = coalesce(:petId, a.pet.id)
+              and a.status = coalesce(:status, a.status)
+              and a.scheduledAt >= coalesce(:from, a.scheduledAt)
+              and a.scheduledAt <= coalesce(:to, a.scheduledAt)
             """)
     Page<Appointment> search(@Param("ownerId") Long ownerId,
                              @Param("veterinarianId") Long veterinarianId,
@@ -33,7 +33,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             select (count(a) > 0) from Appointment a
             where a.veterinarian.id = :veterinarianId
               and a.status <> :cancelled
-              and (:excludeId is null or a.id <> :excludeId)
+              and a.id <> coalesce(:excludeId, a.id)
               and a.scheduledAt < :end
               and a.endAt > :start
             """)

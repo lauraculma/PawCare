@@ -14,8 +14,8 @@ public interface VitalSignRepository extends JpaRepository<VitalSign, Long> {
     @Query("""
             select v from VitalSign v
             where v.pet.id = :petId
-              and (:from is null or v.recordedAt >= :from)
-              and (:to is null or v.recordedAt <= :to)
+              and v.recordedAt >= :from
+              and v.recordedAt <= :to
             """)
     Page<VitalSign> search(@Param("petId") Long petId,
                            @Param("from") Instant from,

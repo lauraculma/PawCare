@@ -32,7 +32,8 @@ public class PetService {
     public Page<PetResponse> list(UserPrincipal principal, String search, Pageable pageable) {
         Long ownerId = principal.role() == Role.OWNER ? principal.id() : null;
         String term = normalize(search);
-        return petRepository.search(ownerId, term, pageable).map(PetResponse::from);
+        String pattern = term == null ? null : "%" + term.toLowerCase() + "%";
+        return petRepository.search(ownerId, pattern, pageable).map(PetResponse::from);
     }
 
     @Transactional(readOnly = true)
