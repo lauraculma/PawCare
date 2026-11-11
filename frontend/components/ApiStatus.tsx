@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getHealth } from "@/lib/api";
+import { healthApi } from "@/lib/api";
 
 type Status = "loading" | "online" | "offline";
 
@@ -9,7 +9,8 @@ export default function ApiStatus() {
   const [status, setStatus] = useState<Status>("loading");
 
   useEffect(() => {
-    getHealth()
+    healthApi
+      .check()
       .then(() => setStatus("online"))
       .catch(() => setStatus("offline"));
   }, []);
