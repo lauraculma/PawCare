@@ -29,7 +29,7 @@ services:
       DB_PASSWORD: pawcare
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
       SPRING_FLYWAY_ENABLED: "true"
-      JWT_SECRET: ${JWT_SECRET:-change-me-please-32-chars}
+      JWT_SECRET: ${JWT_SECRET:-change-me-please-32-chars-1234567890}
       JWT_EXPIRATION_MINUTES: "60"
       CORS_ALLOWED_ORIGINS: "http://localhost,http://localhost:3000"
     depends_on:
