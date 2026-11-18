@@ -18,21 +18,34 @@ export default function PendingVeterinariansPage() {
   const [pageError, setPageError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const fetchPending = useCallback(() => adminApi.pendingVeterinarians(), []);
+
   const loadPending = useCallback(async () => {
     setPageError(null);
     try {
-      const result = await adminApi.pendingVeterinarians();
+      const result = await fetchPending();
       setPending(result.content);
     } catch (error) {
       setPageError(getErrorMessage(error));
     }
-  }, []);
+  }, [fetchPending]);
 
   useEffect(() => {
-    if (user?.role === "ADMIN") {
-      void loadPending();
-    }
-  }, [user, loadPending]);
+    if (user?.role !== "ADMIN") return;
+    let active = true;
+    void fetchPending()
+      .then((result) => {
+        if (!active) return;
+        setPageError(null);
+        setPending(result.content);
+      })
+      .catch((error: unknown) => {
+        if (active) setPageError(getErrorMessage(error));
+      });
+    return () => {
+      active = false;
+    };
+  }, [user, fetchPending]);
 
   async function approve(id: number) {
     setBusyId(id);

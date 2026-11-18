@@ -41,16 +41,18 @@ export default function AuthPage() {
   } = useForm();
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const requestedNext = params.get("next");
-    const requestedMode = params.get("mode");
+    Promise.resolve().then(() => {
+      const params = new URLSearchParams(window.location.search);
+      const requestedNext = params.get("next");
+      const requestedMode = params.get("mode");
 
-    if (requestedNext && requestedNext.startsWith("/") && !requestedNext.startsWith("//") && !requestedNext.includes("\\")) {
-      setNext(requestedNext);
-    }
-    if (requestedMode === "register") {
-      setMode("register");
-    }
+      if (requestedNext && requestedNext.startsWith("/") && !requestedNext.startsWith("//") && !requestedNext.includes("\\")) {
+        setNext(requestedNext);
+      }
+      if (requestedMode === "register") {
+        setMode("register");
+      }
+    });
   }, []);
 
   useEffect(() => {
