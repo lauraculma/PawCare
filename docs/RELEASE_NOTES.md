@@ -12,11 +12,12 @@
 - Corrección del script SQL de demostración para el esquema actual.
 
 ## Cambios principales
-- Backend Spring Boot 4.1.2 con autenticación JWT, roles ADMIN/VETERINARIAN/OWNER, Flyway migrations hasta V6.
-- Endpoints implementados: `/api/auth`, `/api/pets`, `/api/appointments`, `/api/clinical-records`, `/api/vitals`, `/api/alerts`.
+- Backend Spring Boot 4.1.2 con autenticación JWT, roles ADMIN/VETERINARIAN/OWNER, Flyway migrations hasta V8 (V7: aprobación de veterinarios; V8: tratamientos/fórmulas médicas).
+- Endpoints implementados: `/api/auth`, `/api/pets`, `/api/appointments`, `/api/clinical-records`, `/api/treatments`, `/api/vitals`, `/api/alerts`, `/api/admin`.
+- Tratamientos/fórmulas médicas ligados a cada registro clínico: medicamento, dosis, frecuencia, duración e indicaciones, con alta desde el historial para veterinarios.
 - Frontend Next.js 16 con autenticación, panel, mascotas, citas, agenda, historial y alertas.
 - Contenerización completa con Docker Compose y Nginx reverse proxy.
-- CI con GitHub Actions para tests backend y build frontend.
+- CI con GitHub Actions para tests backend, lint y build frontend (el lint ya no se ignora).
 
 ## Pruebas de humo
 - Health check `GET /api/health` -> 200

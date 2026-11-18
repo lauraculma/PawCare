@@ -45,18 +45,23 @@ export default function CollarPage() {
   const total = useMemo(() => quantity * PRICE, [quantity]);
 
   useEffect(() => {
+    let parsed: DemoSale[] | undefined;
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY);
-      if (saved) setSales(JSON.parse(saved) as DemoSale[]);
+      if (saved) parsed = JSON.parse(saved) as DemoSale[];
     } catch {
-      setSales([]);
+      parsed = [];
+    }
+    if (parsed) {
+      const value = parsed;
+      Promise.resolve().then(() => setSales(value));
     }
   }, []);
 
   useEffect(() => {
     const tag = "pawcare-model-viewer";
     if (customElements.get("model-viewer")) {
-      setModelReady(true);
+      Promise.resolve().then(() => setModelReady(true));
       return;
     }
     let script = document.querySelector<HTMLScriptElement>(`script[data-${tag}]`);
