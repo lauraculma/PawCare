@@ -14,6 +14,8 @@ import type {
   PetPayload,
   RegisterPayload,
   RegistrationResponse,
+  Treatment,
+  TreatmentPayload,
   User,
   VitalSign,
   VitalSignPayload,
@@ -176,6 +178,30 @@ export const clinicalRecordsApi = {
   update: (id: number, payload: ClinicalRecordPayload) =>
     request<ClinicalRecord>(`/clinical-records/${id}`, {
       method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+};
+
+export interface TreatmentQuery {
+  clinicalRecordId?: number;
+  petId?: number;
+  page?: number;
+  size?: number;
+}
+
+export const treatmentsApi = {
+  list: (query: TreatmentQuery = {}) =>
+    request<PageResponse<Treatment>>(
+      `/treatments${toQuery({
+        clinicalRecordId: query.clinicalRecordId,
+        petId: query.petId,
+        page: query.page ?? 0,
+        size: query.size ?? 50,
+      })}`,
+    ),
+  create: (payload: TreatmentPayload) =>
+    request<Treatment>("/treatments", {
+      method: "POST",
       body: JSON.stringify(payload),
     }),
 };

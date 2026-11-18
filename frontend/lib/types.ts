@@ -156,6 +156,32 @@ export interface ClinicalRecordPayload {
   notes?: string;
 }
 
+export interface Treatment {
+  id: number;
+  clinicalRecordId: number;
+  petId: number;
+  petName: string;
+  owner: OwnerSummary;
+  veterinarianId: number;
+  veterinarianName: string;
+  medication: string;
+  dosage: string;
+  frequency: string;
+  duration?: string | null;
+  instructions?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface TreatmentPayload {
+  clinicalRecordId: number;
+  medication: string;
+  dosage: string;
+  frequency: string;
+  duration?: string;
+  instructions?: string;
+}
+
 export interface VitalSign {
   id: number;
   petId: number;
