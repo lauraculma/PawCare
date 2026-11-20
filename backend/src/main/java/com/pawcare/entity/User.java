@@ -37,6 +37,9 @@ public class User {
     @Column(length = 30)
     private String phone;
 
+    @Column(unique = true, length = 20)
+    private String cedula;
+
     @Column(nullable = false)
     private boolean active = true;
 
@@ -94,6 +97,9 @@ public class User {
     public String getPhone() {
         return phone;
     }
+
+    public String getCedula() { return cedula; }
+    public void setCedula(String cedula) { this.cedula = cedula; }
 
     public void setPhone(String phone) {
         this.phone = phone;

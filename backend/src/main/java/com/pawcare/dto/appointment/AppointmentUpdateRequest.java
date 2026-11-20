@@ -13,8 +13,8 @@ public record AppointmentUpdateRequest(
         Instant scheduledAt,
 
         @NotNull(message = "La duracion es obligatoria")
-        @Min(value = 15, message = "La duracion minima es de 15 minutos")
-        @Max(value = 180, message = "La duracion maxima es de 180 minutos")
+        @Min(value = 60, message = "La cita debe durar 60 minutos")
+        @Max(value = 60, message = "La cita debe durar 60 minutos")
         Integer durationMinutes,
 
         @NotBlank(message = "El motivo de la cita es obligatorio")
@@ -23,6 +23,6 @@ public record AppointmentUpdateRequest(
 
         String notes,
 
-        Long veterinarianId
+        String veterinarianCedula
 ) {
 }

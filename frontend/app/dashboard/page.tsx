@@ -9,7 +9,8 @@ import { buttonClasses } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import PageHeader from "@/components/ui/PageHeader";
 import Spinner from "@/components/ui/Spinner";
-import { alertsApi, appointmentsApi, getErrorMessage, petsApi } from "@/lib/api";
+import OwnerCollarPanel from "@/components/dashboard/OwnerCollarPanel";
+import { adminApi, alertsApi, appointmentsApi, getErrorMessage, petsApi } from "@/lib/api";
 import { roleLabels } from "@/lib/format";
 import type { Role } from "@/lib/types";
 
@@ -39,11 +40,6 @@ const quickLinks: Record<Role, { href: string; label: string; description: strin
   ],
   VETERINARIAN: [
     {
-      href: "/agenda",
-      label: "Agenda del dia",
-      description: "Revisa las citas asignadas y su estado.",
-    },
-    {
       href: "/mascotas",
       label: "Pacientes",
       description: "Consulta las mascotas y su informacion clinica.",
@@ -66,9 +62,9 @@ const quickLinks: Record<Role, { href: string; label: string; description: strin
       description: "Supervisa la programacion de la clinica.",
     },
     {
-      href: "/agenda",
-      label: "Agenda",
-      description: "Consulta la agenda general.",
+      href: "/admin/turnos",
+      label: "Turnos veterinarios",
+      description: "Asigna y actualiza los turnos semanales del equipo.",
     },
     {
       href: "/admin/veterinarios",
@@ -82,6 +78,7 @@ export default function DashboardPage() {
   const { user, loading } = useSession();
   const [stats, setStats] = useState<Stats | null>(null);
   const [statsError, setStatsError] = useState<string | null>(null);
+  const [pendingApprovals, setPendingApprovals] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -91,11 +88,16 @@ export default function DashboardPage() {
     let active = true;
     Promise.resolve().then(async () => {
       setStatsError(null);
+      if (user.role === "ADMIN") {
+        void adminApi.pendingVeterinarians(0, 1)
+          .then(pending => { if (active) setPendingApprovals(pending.totalElements); })
+          .catch(error => { if (active) setStatsError(getErrorMessage(error)); });
+      }
       try {
         const from = new Date().toISOString();
         const [pets, appointments, alerts] = await Promise.all([
           petsApi.list({ size: 1 }),
-          appointmentsApi.list({ from, size: 1 }),
+          appointmentsApi.list({ from, status: "SCHEDULED", size: 1 }),
           alertsApi.list({ acknowledged: false, size: 1 }),
         ]);
         if (active) {
@@ -150,6 +152,8 @@ export default function DashboardPage() {
         </Alert>
       ) : null}
 
+      {user.role === "OWNER" ? <OwnerCollarPanel /> : null}
+
       <section className="grid gap-4 sm:grid-cols-3">
         <Card>
           <p className="text-sm font-medium text-zinc-500">Mascotas</p>
@@ -183,8 +187,11 @@ export default function DashboardPage() {
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-xl border border-zinc-200 bg-white p-6 transition-colors hover:border-emerald-500"
+              className="relative rounded-xl border border-zinc-200 bg-white p-6 transition-colors hover:border-emerald-500"
             >
+              {link.href === "/admin/veterinarios" && pendingApprovals > 0 ? (
+                <span aria-label={`${pendingApprovals} aprobaciones pendientes`} title={`${pendingApprovals} aprobaciones pendientes`} className="absolute right-5 top-5 inline-block h-3 w-3 rounded-full bg-red-500 ring-2 ring-red-100" />
+              ) : null}
               <h3 className="font-semibold text-zinc-900">{link.label}</h3>
               <p className="mt-2 text-sm text-zinc-600">{link.description}</p>
               <span className="mt-4 inline-block text-sm font-semibold text-emerald-700">

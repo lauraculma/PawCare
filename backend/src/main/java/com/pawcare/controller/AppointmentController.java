@@ -3,7 +3,10 @@ package com.pawcare.controller;
 import com.pawcare.dto.appointment.AppointmentRequest;
 import com.pawcare.dto.appointment.AppointmentResponse;
 import com.pawcare.dto.appointment.AppointmentUpdateRequest;
+import com.pawcare.dto.appointment.AvailabilitySlot;
+import com.pawcare.dto.appointment.NearestAvailability;
 import com.pawcare.dto.appointment.StatusUpdateRequest;
+import com.pawcare.dto.appointment.VeterinarianOption;
 import com.pawcare.entity.AppointmentStatus;
 import com.pawcare.security.UserPrincipal;
 import com.pawcare.service.AppointmentService;
@@ -26,6 +29,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/appointments")
@@ -37,6 +43,34 @@ public class AppointmentController {
         this.appointmentService = appointmentService;
     }
 
+    @GetMapping("/veterinarians")
+    public List<VeterinarianOption> veterinarians() {
+        return appointmentService.veterinarians();
+    }
+
+    @GetMapping("/availability")
+    public List<AvailabilitySlot> availability(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) String veterinarianCedula,
+            @RequestParam(required = false) Long excludeAppointmentId) {
+        return appointmentService.availability(date, veterinarianCedula, excludeAppointmentId);
+    }
+
+    @GetMapping("/available-dates")
+    public List<LocalDate> availableDates(
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
+            @RequestParam(required = false) String veterinarianCedula,
+            @RequestParam(required = false) Long excludeAppointmentId) {
+        return appointmentService.availableDates(month, veterinarianCedula, excludeAppointmentId);
+    }
+
+    @GetMapping("/availability/nearest")
+    public NearestAvailability nearestAvailability(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) Long excludeAppointmentId) {
+        return appointmentService.nearestAvailability(fromDate, excludeAppointmentId);
+    }
+
     @GetMapping
     public Page<AppointmentResponse> list(
             @AuthenticationPrincipal UserPrincipal principal,
@@ -45,7 +79,7 @@ public class AppointmentController {
             @RequestParam(required = false) AppointmentStatus status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
-            @PageableDefault(size = 50, sort = "scheduledAt") Pageable pageable) {
+            @PageableDefault(size = 50) Pageable pageable) {
         return appointmentService.list(principal, veterinarianId, petId, status, from, to, pageable);
     }
 

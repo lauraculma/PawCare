@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useSession } from "@/components/providers/SessionProvider";
@@ -10,10 +11,9 @@ import { roleLabels } from "@/lib/format";
 const publicLinks = [{ href: "/collar", label: "Collar inteligente" }];
 
 const privateLinks = [
-  { href: "/dashboard", label: "Panel" },
+  { href: "/dashboard", label: "Inicio" },
   { href: "/mascotas", label: "Mascotas" },
   { href: "/citas", label: "Citas" },
-  { href: "/agenda", label: "Agenda" },
 ];
 
 export default function Navbar() {
@@ -23,7 +23,11 @@ export default function Navbar() {
   const [signingOut, setSigningOut] = useState(false);
 
   const links = user
-    ? [...privateLinks, ...(user.role === "ADMIN" ? [{ href: "/admin/veterinarios", label: "Aprobaciones" }] : []), ...publicLinks]
+    ? [...privateLinks, ...(user.role === "ADMIN" ? [
+        { href: "/admin/usuarios", label: "Usuarios" },
+        { href: "/admin/turnos", label: "Turnos" },
+        { href: "/admin/veterinarios", label: "Aprobaciones" },
+      ] : []), ...publicLinks]
     : publicLinks;
 
   async function handleLogout() {
@@ -46,8 +50,9 @@ export default function Navbar() {
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-4">
         <Link
           href={user ? "/dashboard" : "/"}
-          className="text-xl font-bold tracking-tight text-emerald-700"
+          className="flex items-center gap-2 text-xl font-bold tracking-tight text-emerald-700"
         >
+          <Image src="/logo.png" alt="" width={40} height={40} priority className="h-10 w-10 rounded-full object-contain" />
           PawCare
         </Link>
 

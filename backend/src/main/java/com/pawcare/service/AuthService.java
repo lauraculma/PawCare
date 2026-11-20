@@ -38,6 +38,10 @@ public class AuthService {
         if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new ConflictException("Ya existe un usuario registrado con ese correo");
         }
+        String cedula = request.cedula().trim();
+        if (userRepository.existsByCedula(cedula)) {
+            throw new ConflictException("Ya existe un usuario registrado con esa cedula");
+        }
 
         Role role = request.role() == null ? Role.OWNER : request.role();
         if (role == Role.ADMIN) {
@@ -50,6 +54,7 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setRole(role);
         user.setPhone(request.phone() == null ? null : request.phone().trim());
+        user.setCedula(cedula);
         user.setActive(true);
         user.setApproved(role != Role.VETERINARIAN);
 

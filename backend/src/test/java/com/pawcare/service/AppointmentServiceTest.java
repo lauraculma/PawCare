@@ -8,12 +8,14 @@ import com.pawcare.entity.AppointmentStatus;
 import com.pawcare.entity.Pet;
 import com.pawcare.entity.Role;
 import com.pawcare.entity.User;
+import com.pawcare.entity.VeterinarianShift;
 import com.pawcare.exception.BadRequestException;
 import com.pawcare.exception.ConflictException;
 import com.pawcare.exception.ForbiddenOperationException;
 import com.pawcare.repository.AppointmentRepository;
 import com.pawcare.repository.PetRepository;
 import com.pawcare.repository.UserRepository;
+import com.pawcare.repository.VeterinarianShiftRepository;
 import com.pawcare.security.UserPrincipal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +27,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.time.Instant;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.time.ZoneId;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,12 +49,14 @@ class AppointmentServiceTest {
     private PetRepository petRepository;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private VeterinarianShiftRepository shiftRepository;
 
     private AppointmentService appointmentService;
 
     @BeforeEach
     void setUp() {
-        appointmentService = new AppointmentService(appointmentRepository, petRepository, userRepository);
+        appointmentService = new AppointmentService(appointmentRepository, petRepository, userRepository, shiftRepository);
     }
 
     @Test
@@ -60,11 +66,12 @@ class AppointmentServiceTest {
         Pet pet = pet(1L, owner);
         Instant start = futureStart();
 
-        when(petRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(pet));
-        when(userRepository.findById(2L)).thenReturn(Optional.of(vet));
+        when(petRepository.findByPublicIdAndActiveTrue("10000")).thenReturn(Optional.of(pet));
+        when(userRepository.findByCedula("12345678")).thenReturn(Optional.of(vet));
+        stubShift(vet, start);
         when(appointmentRepository
                 .existsByVeterinarian_IdAndStatusNotAndScheduledAtLessThanAndEndAtGreaterThan(
-                        2L, AppointmentStatus.CANCELLED, start.plus(30, ChronoUnit.MINUTES), start))
+                        2L, AppointmentStatus.CANCELLED, start.plus(60, ChronoUnit.MINUTES), start))
                 .thenReturn(false);
         when(appointmentRepository.save(any(Appointment.class))).thenAnswer(invocation -> {
             Appointment appointment = invocation.getArgument(0);
@@ -76,8 +83,8 @@ class AppointmentServiceTest {
 
         assertThat(response.id()).isEqualTo(10L);
         assertThat(response.status()).isEqualTo(AppointmentStatus.SCHEDULED);
-        assertThat(response.endAt()).isEqualTo(start.plus(30, ChronoUnit.MINUTES));
-        assertThat(response.veterinarianId()).isEqualTo(2L);
+        assertThat(response.endAt()).isEqualTo(start.plus(60, ChronoUnit.MINUTES));
+        assertThat(response.veterinarianId()).isEqualTo("12345678");
     }
 
     @Test
@@ -85,7 +92,7 @@ class AppointmentServiceTest {
         User owner = user(7L, Role.OWNER);
         User another = user(8L, Role.OWNER);
         Pet pet = pet(1L, another);
-        when(petRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(pet));
+        when(petRepository.findByPublicIdAndActiveTrue("10000")).thenReturn(Optional.of(pet));
 
         assertThatThrownBy(() -> appointmentService.create(request(1L, 2L, futureStart()), principal(owner)))
                 .isInstanceOf(ForbiddenOperationException.class);
@@ -100,11 +107,12 @@ class AppointmentServiceTest {
         Pet pet = pet(1L, owner);
         Instant start = futureStart();
 
-        when(petRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(pet));
-        when(userRepository.findById(2L)).thenReturn(Optional.of(vet));
+        when(petRepository.findByPublicIdAndActiveTrue("10000")).thenReturn(Optional.of(pet));
+        when(userRepository.findByCedula("12345678")).thenReturn(Optional.of(vet));
+        stubShift(vet, start);
         when(appointmentRepository
                 .existsByVeterinarian_IdAndStatusNotAndScheduledAtLessThanAndEndAtGreaterThan(
-                        2L, AppointmentStatus.CANCELLED, start.plus(30, ChronoUnit.MINUTES), start))
+                        2L, AppointmentStatus.CANCELLED, start.plus(60, ChronoUnit.MINUTES), start))
                 .thenReturn(true);
 
         assertThatThrownBy(() -> appointmentService.create(request(1L, 2L, start), principal(owner)))
@@ -117,17 +125,19 @@ class AppointmentServiceTest {
         Pet pet = pet(1L, user(7L, Role.OWNER));
         Instant start = futureStart();
 
-        when(petRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(pet));
+        when(petRepository.findByPublicIdAndActiveTrue("10000")).thenReturn(Optional.of(pet));
         when(userRepository.findById(2L)).thenReturn(Optional.of(vet));
+        when(userRepository.findByCedula("12345678")).thenReturn(Optional.of(vet));
+        stubShift(vet, start);
         when(appointmentRepository
                 .existsByVeterinarian_IdAndStatusNotAndScheduledAtLessThanAndEndAtGreaterThan(
-                        2L, AppointmentStatus.CANCELLED, start.plus(30, ChronoUnit.MINUTES), start))
+                        2L, AppointmentStatus.CANCELLED, start.plus(60, ChronoUnit.MINUTES), start))
                 .thenReturn(false);
         when(appointmentRepository.save(any(Appointment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         AppointmentResponse response = appointmentService.create(request(1L, null, start), principal(vet));
 
-        assertThat(response.veterinarianId()).isEqualTo(2L);
+        assertThat(response.veterinarianId()).isEqualTo("12345678");
     }
 
     @Test
@@ -165,11 +175,23 @@ class AppointmentServiceTest {
     }
 
     private AppointmentRequest request(Long petId, Long vetId, Instant start) {
-        return new AppointmentRequest(petId, vetId, start, 30, "Control general", "Sin novedades");
+        return new AppointmentRequest("10000", vetId == null ? null : "12345678", start, 60, "Control general", "Sin novedades");
     }
 
     private Instant futureStart() {
         return Instant.now().plus(2, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
+    }
+
+    private void stubShift(User vet, Instant start) {
+        var local = start.atZone(ZoneId.of("America/Bogota"));
+        int hour = local.getHour();
+        LocalTime shiftStart = hour < 12 ? LocalTime.of(7, 0) : hour < 17 ? LocalTime.NOON : LocalTime.of(17, 0);
+        VeterinarianShift shift = new VeterinarianShift();
+        shift.setVeterinarian(vet);
+        shift.setDayOfWeek(local.getDayOfWeek().getValue());
+        shift.setStartTime(shiftStart);
+        when(shiftRepository.findByVeterinarian_IdAndDayOfWeek(vet.getId(), local.getDayOfWeek().getValue()))
+                .thenReturn(Optional.of(shift));
     }
 
     private User user(Long id, Role role) {
@@ -177,6 +199,7 @@ class AppointmentServiceTest {
         user.setId(id);
         user.setFullName("Usuario " + id);
         user.setEmail("user" + id + "@pawcare.test");
+        user.setCedula("12345678");
         user.setRole(role);
         user.setActive(true);
         return user;
@@ -192,6 +215,7 @@ class AppointmentServiceTest {
         pet.setOwner(owner);
         pet.setName("Luna");
         pet.setSpecies("Perro");
+        pet.setPublicId("10000");
         pet.setActive(true);
         return pet;
     }

@@ -33,13 +33,19 @@ Referencia de los endpoints implementados. La documentacion interactiva se publi
 | PUT | `/api/pets/{id}` | segun rol | Edicion de la mascota |
 | DELETE | `/api/pets/{id}` | segun rol | Baja logica de la mascota |
 
+Las solicitudes de mascotas usan `ownerCedula` para asignar un propietario por su número de cédula.
+
 ### Citas
 
 | Metodo | Ruta | Rol | Descripcion |
 | --- | --- | --- | --- |
 | GET | `/api/appointments` | segun rol | Listado paginado; filtros `veterinarianId`, `petId`, `status`, `from`, `to` |
+| GET | `/api/appointments/veterinarians` | autenticado | Veterinarios aprobados con cédula para asignar citas |
+| GET | `/api/appointments/available-dates` | autenticado | Días con horarios disponibles; acepta `month` (`YYYY-MM`) y filtro opcional `veterinarianCedula` |
+| GET | `/api/appointments/availability` | autenticado | Horarios libres de una fecha; acepta `date` y filtro opcional `veterinarianCedula` |
+| GET | `/api/appointments/availability/nearest` | autenticado | Primera fecha, hora y veterinario disponibles a partir de `fromDate` |
 | GET | `/api/appointments/{id}` | segun rol | Detalle de la cita |
-| POST | `/api/appointments` | segun rol | Agendamiento con validacion de solapamiento |
+| POST | `/api/appointments` | segun rol | Cita de 60 minutos, identificada por `petPublicId` y asignada por cédula veterinaria |
 | PUT | `/api/appointments/{id}` | segun rol | Reprogramacion de la cita |
 | PATCH | `/api/appointments/{id}/cancel` | segun rol | Cancelacion de la cita |
 | PATCH | `/api/appointments/{id}/status` | veterinario/admin | Cambio de estado (`SCHEDULED`, `CONFIRMED`, `COMPLETED`, `CANCELLED`, `NO_SHOW`) |
@@ -72,6 +78,8 @@ Referencia de los endpoints implementados. La documentacion interactiva se publi
 | --- | --- | --- | --- |
 | GET | `/api/admin/veterinarians/pending` | admin | Listar solicitudes veterinarias pendientes |
 | PATCH | `/api/admin/veterinarians/{id}/approve` | admin | Aprobar una cuenta veterinaria |
+| GET | `/api/admin/schedules` | admin | Consultar turnos semanales de veterinarios aprobados |
+| PUT | `/api/admin/veterinarians/{id}/schedule` | admin | Crear o reemplazar el turno semanal del veterinario |
 
 ### Flujo de aprobacion veterinaria
 

@@ -6,6 +6,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import jakarta.persistence.criteria.Predicate;
@@ -46,6 +49,15 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
                 predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("scheduledAt"), to));
             }
 
+            if (query != null && query.getResultType() != Long.class) {
+                query.orderBy(
+                        criteriaBuilder.asc(criteriaBuilder.selectCase()
+                                .when(criteriaBuilder.equal(root.get("status"), AppointmentStatus.SCHEDULED), 0)
+                                .when(criteriaBuilder.equal(root.get("status"), AppointmentStatus.CONFIRMED), 0)
+                                .when(criteriaBuilder.equal(root.get("status"), AppointmentStatus.COMPLETED), 1)
+                                .otherwise(2)),
+                        criteriaBuilder.asc(root.get("scheduledAt")));
+            }
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
         };
         return findAll(specification, pageable);
@@ -63,4 +75,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
             Instant scheduledAtBefore,
             Instant endAtAfter,
             Long excludedId);
+
+    @Modifying
+    @Query("delete from Appointment a where a.veterinarian.id = :veterinarianId")
+    void deleteAllByVeterinarianId(@Param("veterinarianId") Long veterinarianId);
 }

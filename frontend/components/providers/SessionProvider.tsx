@@ -50,7 +50,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           "/dashboard",
           "/mascotas",
           "/citas",
-          "/agenda",
           "/pacientes",
           "/alertas",
           "/historial",

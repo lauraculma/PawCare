@@ -68,8 +68,7 @@ export default function CollarPage() {
     if (!script) {
       script = document.createElement("script");
       script.type = "module";
-      script.src =
-        "https://cdn.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer.min.js";
+      script.src = "https://cdn.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer.min.js";
       script.setAttribute(`data-${tag}`, "true");
       document.head.appendChild(script);
     }
@@ -186,24 +185,14 @@ export default function CollarPage() {
             } as HTMLAttributes<HTMLElement>)}
             {!modelReady && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 text-3xl">
-                  3D
-                </div>
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 text-3xl">3D</div>
                 <p className="font-semibold text-zinc-800">
-                  {modelError
-                    ? "No se pudo cargar el visor 3D"
-                    : "Preparando modelo tridimensional..."}
+                  {modelError ? "No se pudo cargar el visor 3D" : "Preparando modelo tridimensional..."}
                 </p>
                 <p className="max-w-xs text-sm text-zinc-500">
-                  {modelError
-                    ? "Puedes abrir el archivo del modelo directamente."
-                    : "El modelo puede tardar unos segundos en cargar."}
+                  {modelError ? "Puedes abrir el archivo del modelo directamente." : "El modelo puede tardar unos segundos en cargar."}
                 </p>
-                {modelError && (
-                  <a className="text-sm font-semibold text-emerald-700 underline" href={MODEL_URL}>
-                    Abrir modelo 3D
-                  </a>
-                )}
+                {modelError ? <a className="text-sm font-semibold text-emerald-700 underline" href={MODEL_URL}>Abrir modelo 3D</a> : null}
               </div>
             )}
           </div>

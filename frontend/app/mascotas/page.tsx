@@ -14,6 +14,13 @@ import { Field, Input, Select, Textarea } from "@/components/ui/Field";
 import Alert from "@/components/ui/Alert";
 import Spinner from "@/components/ui/Spinner";
 
+const BREEDS_BY_SPECIES: Record<string, string[]> = {
+  Perro: ["Labrador Retriever", "Golden Retriever", "Pastor Alemán", "Bulldog", "Beagle", "Poodle", "Chihuahua", "Mestizo / Otro"],
+  Gato: ["Siamés", "Persa", "Maine Coon", "Bengalí", "Ragdoll", "Británico de pelo corto", "Mestizo / Otro"],
+  "Pequeños mamíferos": ["Conejo", "Hámster", "Cobaya", "Ratón", "Otro pequeño mamífero"],
+  "Aves domésticas": ["Periquito", "Canario", "Loro pequeño", "Otra ave doméstica"],
+};
+
 export default function PetsPage() {
   const { user } = useSession();
   const [pets, setPets] = useState<PageResponse<Pet> | null>(null);
@@ -121,7 +128,7 @@ export default function PetsPage() {
           {pets.content.map((pet) => (
             <Card key={pet.id}>
               <CardHeader
-                title={pet.name}
+                title={`${pet.name} · ${pet.publicId}`}
                 description={`${pet.species}${pet.breed ? ` · ${pet.breed}` : ""}`}
               />
               <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
@@ -214,8 +221,9 @@ function PetForm({
     sex: initial?.sex ?? "",
     collarId: initial?.collarId ?? "",
     notes: initial?.notes ?? "",
-    ownerId: initial?.owner?.id ?? undefined,
+    ownerCedula: initial?.owner?.cedula ?? initial?.owner?.id ?? "",
   });
+  const breeds = BREEDS_BY_SPECIES[form.species] ?? [];
 
   return (
     <form
@@ -223,6 +231,7 @@ function PetForm({
         e.preventDefault();
         onSave({
           ...form,
+          ownerCedula: canSetOwner ? form.ownerCedula || undefined : undefined,
           birthDate: form.birthDate || undefined,
           weightKg: form.weightKg ? Number(form.weightKg) : null,
         });
@@ -237,14 +246,26 @@ function PetForm({
         />
       </Field>
       <Field label="Especie" required>
-        <Input
+        <Select
           value={form.species}
-          onChange={e => setForm(f => ({ ...f, species: e.target.value }))}
-        />
+          onChange={e => setForm(f => ({ ...f, species: e.target.value, breed: "" }))}
+          required
+        >
+          <option value="">Selecciona una especie</option>
+          {Object.keys(BREEDS_BY_SPECIES).map(species => <option key={species} value={species}>{species}</option>)}
+        </Select>
       </Field>
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Raza">
-          <Input value={form.breed ?? ""} onChange={e => setForm(f => ({ ...f, breed: e.target.value }))} />
+        <Field label="Raza" required>
+          <Select
+            value={form.breed ?? ""}
+            onChange={e => setForm(f => ({ ...f, breed: e.target.value }))}
+            disabled={!form.species}
+            required
+          >
+            <option value="">{form.species ? "Selecciona una raza" : "Primero selecciona la especie"}</option>
+            {breeds.map(breed => <option key={breed} value={breed}>{breed}</option>)}
+          </Select>
         </Field>
         <Field label="Sexo">
           <Select value={form.sex ?? ""} onChange={e => setForm(f => ({ ...f, sex: e.target.value }))}>
@@ -266,8 +287,8 @@ function PetForm({
         <Input value={form.collarId ?? ""} onChange={e => setForm(f => ({ ...f, collarId: e.target.value }))} />
       </Field>
       {canSetOwner && (
-        <Field label="ID Propietario">
-          <Input type="number" value={form.ownerId ?? ""} onChange={e => setForm(f => ({ ...f, ownerId: e.target.value ? Number(e.target.value) : undefined }))} />
+        <Field label="Cédula del propietario" required>
+          <Input inputMode="numeric" pattern="[0-9]{5,20}" value={form.ownerCedula ?? ""} onChange={e => setForm(f => ({ ...f, ownerCedula: e.target.value.replace(/\D/g, "").slice(0, 20) }))} required />
         </Field>
       )}
       <Field label="Notas">

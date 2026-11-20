@@ -22,6 +22,10 @@ public record RegisterRequest(
         @Size(max = 30, message = "El telefono no puede superar 30 caracteres")
         String phone,
 
+        @NotBlank(message = "La cedula es obligatoria")
+        @jakarta.validation.constraints.Pattern(regexp = "^[0-9]{5,20}$", message = "La cedula debe tener entre 5 y 20 digitos")
+        String cedula,
+
         Role role
 ) {
 }

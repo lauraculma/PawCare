@@ -89,6 +89,7 @@ export default function AuthPage() {
           email: data.email,
           password: data.password,
           phone: data.phone?.trim() ? data.phone : undefined,
+          cedula: data.cedula,
           role,
         };
         const registration = await registerUser(payload);
@@ -190,6 +191,11 @@ export default function AuthPage() {
               <Field label="Telefono" hint="Opcional">
                 <Input placeholder="3001234567" {...register("phone")} />
               </Field>
+
+              <Field label="Número de cédula" required>
+                <Input inputMode="numeric" placeholder="1234567890" {...register("cedula", { required: "Requerido", pattern: { value: /^[0-9]{5,20}$/, message: "Ingresa una cédula válida (5 a 20 dígitos)" } })} />
+              </Field>
+              {errors.cedula && <p className="text-xs text-red-600">{String(errors.cedula.message)}</p>}
 
               <Field label="Rol" required hint="Las cuentas veterinarias requieren aprobacion de un administrador antes de iniciar sesion.">
                 <Select {...register("role", { required: "Requerido" })} defaultValue="OWNER">

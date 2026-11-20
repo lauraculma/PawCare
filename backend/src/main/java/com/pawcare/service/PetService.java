@@ -44,7 +44,7 @@ public class PetService {
 
     @Transactional
     public PetResponse create(PetRequest request, UserPrincipal principal) {
-        User owner = resolveOwner(request.ownerId(), principal);
+        User owner = resolveOwner(request.ownerCedula(), principal);
         normalizeAndValidateCollar(request.collarId(), null);
 
         Pet pet = new Pet();
@@ -59,10 +59,9 @@ public class PetService {
         assertAccess(pet, principal);
         normalizeAndValidateCollar(request.collarId(), id);
 
-        if (principal.role() != Role.OWNER && request.ownerId() != null
-                && !request.ownerId().equals(pet.getOwner().getId())) {
-            User newOwner = userRepository.findById(request.ownerId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Usuario", request.ownerId()));
+        if (principal.role() != Role.OWNER && request.ownerCedula() != null
+                && !request.ownerCedula().equals(pet.getOwner().getCedula())) {
+            User newOwner = findOwnerByCedula(request.ownerCedula());
             pet.setOwner(newOwner);
         }
 
@@ -90,20 +89,29 @@ public class PetService {
         pet.setNotes(normalize(request.notes()));
     }
 
-    private User resolveOwner(Long requestedOwnerId, UserPrincipal principal) {
+    private User resolveOwner(String requestedOwnerCedula, UserPrincipal principal) {
         if (principal.role() == Role.OWNER) {
-            if (requestedOwnerId != null && !requestedOwnerId.equals(principal.id())) {
+            User owner = userRepository.findById(principal.id())
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuario", principal.id()));
+            if (requestedOwnerCedula != null && !requestedOwnerCedula.equals(owner.getCedula())) {
                 throw new ForbiddenOperationException("Solo puede registrar mascotas a su nombre");
             }
-            return userRepository.findById(principal.id())
-                    .orElseThrow(() -> new ResourceNotFoundException("Usuario", principal.id()));
+            return owner;
         }
 
-        if (requestedOwnerId == null) {
-            throw new BadRequestException("Debe indicar el propietario de la mascota");
+        if (requestedOwnerCedula == null || requestedOwnerCedula.isBlank()) {
+            throw new BadRequestException("Debe indicar la cédula del propietario de la mascota");
         }
-        return userRepository.findById(requestedOwnerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario", requestedOwnerId));
+        return findOwnerByCedula(requestedOwnerCedula);
+    }
+
+    private User findOwnerByCedula(String cedula) {
+        User owner = userRepository.findByCedula(cedula.trim())
+                .orElseThrow(() -> new ResourceNotFoundException("Propietario", cedula));
+        if (owner.getRole() != Role.OWNER) {
+            throw new BadRequestException("La cédula indicada no pertenece a un propietario");
+        }
+        return owner;
     }
 
     private Pet findActive(Long id) {

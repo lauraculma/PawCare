@@ -8,10 +8,8 @@ export const roleLabels: Record<Role, string> = {
 
 export const statusLabels: Record<AppointmentStatus, string> = {
   SCHEDULED: "Programada",
-  CONFIRMED: "Confirmada",
-  COMPLETED: "Completada",
+  COMPLETED: "Asistida",
   CANCELLED: "Cancelada",
-  NO_SHOW: "No asistio",
 };
 
 export function formatDateTime(value?: string | null): string {
@@ -91,5 +89,5 @@ export function ageFromBirthDate(value?: string | null): string {
     return `${Math.max(months, 0)} meses`;
   }
   const years = Math.floor(months / 12);
-  return `${years} ${years === 1 ? "ano" : "anos"}`;
+  return `${years} ${years === 1 ? "año" : "años"}`;
 }

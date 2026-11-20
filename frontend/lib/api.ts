@@ -1,10 +1,13 @@
 import type {
   Alert,
+  AdminUserUpdatePayload,
   ApiErrorBody,
   Appointment,
   AppointmentPayload,
   AppointmentStatus,
   AppointmentUpdatePayload,
+  AvailabilitySlot,
+  NearestAvailability,
   AuthResponse,
   ClinicalRecord,
   ClinicalRecordPayload,
@@ -17,6 +20,8 @@ import type {
   Treatment,
   TreatmentPayload,
   User,
+  VeterinarianOption,
+  VeterinarianSchedule,
   VitalSign,
   VitalSignPayload,
 } from "@/lib/types";
@@ -120,6 +125,13 @@ export interface AppointmentQuery {
 }
 
 export const appointmentsApi = {
+  veterinarians: () => request<VeterinarianOption[]>("/appointments/veterinarians"),
+  availability: (date: string, veterinarianCedula?: string, excludeAppointmentId?: number) =>
+    request<AvailabilitySlot[]>(`/appointments/availability${toQuery({ date, veterinarianCedula, excludeAppointmentId })}`),
+  availableDates: (month: string, veterinarianCedula?: string, excludeAppointmentId?: number) =>
+    request<string[]>(`/appointments/available-dates${toQuery({ month, veterinarianCedula, excludeAppointmentId })}`),
+  nearestAvailability: (fromDate: string, excludeAppointmentId?: number) =>
+    request<NearestAvailability>(`/appointments/availability/nearest${toQuery({ fromDate, excludeAppointmentId })}`),
   list: (query: AppointmentQuery = {}) =>
     request<PageResponse<Appointment>>(
       `/appointments${toQuery({
@@ -145,10 +157,10 @@ export const appointmentsApi = {
     }),
   cancel: (id: number) =>
     request<Appointment>(`/appointments/${id}/cancel`, { method: "PATCH" }),
-  updateStatus: (id: number, status: AppointmentStatus) =>
+  updateStatus: (id: number, status: AppointmentStatus, notes: string) =>
     request<Appointment>(`/appointments/${id}/status`, {
       method: "PATCH",
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, notes }),
     }),
 };
 
@@ -257,6 +269,14 @@ export function getErrorMessage(error: unknown): string {
 
 
 export const adminApi = {
+  veterinarianSchedules: () => request<VeterinarianSchedule[]>("/admin/schedules"),
+  saveVeterinarianSchedule: (id: number, shifts: { dayOfWeek: number; startTime: string }[]) =>
+    request<VeterinarianSchedule>(`/admin/veterinarians/${id}/schedule`, { method: "PUT", body: JSON.stringify({ shifts }) }),
+  users: (page = 0, size = 100) =>
+    request<PageResponse<User>>(`/admin/users${toQuery({ page, size, sort: "fullName,asc" })}`),
+  updateUser: (id: number, payload: AdminUserUpdatePayload) =>
+    request<User>(`/admin/users/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  deleteUser: (id: number) => request<void>(`/admin/users/${id}`, { method: "DELETE" }),
   pendingVeterinarians: (page = 0, size = 20) =>
     request<PageResponse<User>>(`/admin/veterinarians/pending${toQuery({ page, size, sort: "createdAt,asc" })}`),
   approveVeterinarian: (id: number) =>

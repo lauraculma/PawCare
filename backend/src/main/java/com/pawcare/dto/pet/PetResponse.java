@@ -8,6 +8,7 @@ import java.time.LocalDate;
 
 public record PetResponse(
         Long id,
+        String publicId,
         OwnerSummary owner,
         String name,
         String species,
@@ -23,6 +24,7 @@ public record PetResponse(
     public static PetResponse from(Pet pet) {
         return new PetResponse(
                 pet.getId(),
+                pet.getPublicId(),
                 OwnerSummary.from(pet.getOwner()),
                 pet.getName(),
                 pet.getSpecies(),

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -36,6 +37,7 @@ public record PetRequest(
 
         String notes,
 
-        Long ownerId
+        @Pattern(regexp = "^[0-9]{5,20}$", message = "La cédula del propietario debe tener entre 5 y 20 dígitos")
+        String ownerCedula
 ) {
 }

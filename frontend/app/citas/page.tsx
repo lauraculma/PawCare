@@ -3,17 +3,18 @@
 import { useEffect, useState } from "react";
 import { appointmentsApi, getErrorMessage } from "@/lib/api";
 import type { Appointment, AppointmentPayload, AppointmentStatus } from "@/lib/types";
-import { formatDateTime, formatDateTimeInput, statusLabels } from "@/lib/format";
+import { formatDateTime, statusLabels } from "@/lib/format";
 import { Card, CardHeader } from "@/components/ui/Card";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import { buttonClasses } from "@/components/ui/Button";
 import { useSession } from "@/components/providers/SessionProvider";
 import Modal from "@/components/ui/Modal";
-import { Field, Input, Select, Textarea } from "@/components/ui/Field";
+import { Field, Select, Textarea } from "@/components/ui/Field";
 import Alert from "@/components/ui/Alert";
 import Spinner from "@/components/ui/Spinner";
 import Badge from "@/components/ui/Badge";
+import CalendarAppointmentForm from "@/components/appointments/CalendarAppointmentForm";
 
 export default function AppointmentsPage() {
   const { user } = useSession();
@@ -32,13 +33,15 @@ export default function AppointmentsPage() {
   const [editing, setEditing] = useState<Appointment | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [completionTarget, setCompletionTarget] = useState<number | null>(null);
+  const [completionNotes, setCompletionNotes] = useState("");
 
   const load = async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await appointmentsApi.list({
-        veterinarianId: user?.role === "VETERINARIAN" ? user.id : undefined,
+        veterinarianId: user?.role === "VETERINARIAN" ? user.internalId : undefined,
         status: status || undefined,
         page,
         size,
@@ -65,6 +68,24 @@ export default function AppointmentsPage() {
     setError(null);
     try {
       await appointmentsApi.cancel(id);
+      setData(current => current ? {
+        ...current,
+        content: current.content.map(appointment => appointment.id === id
+          ? { ...appointment, status: "CANCELLED" }
+          : appointment),
+      } : current);
+      await load();
+    } catch (e) {
+      setError(getErrorMessage(e));
+    }
+  }
+
+  async function handleComplete(id: number) {
+    setError(null);
+    try {
+      await appointmentsApi.updateStatus(id, "COMPLETED", completionNotes.trim());
+      setCompletionTarget(null);
+      setCompletionNotes("");
       await load();
     } catch (e) {
       setError(getErrorMessage(e));
@@ -81,7 +102,7 @@ export default function AppointmentsPage() {
           durationMinutes: payload.durationMinutes,
           reason: payload.reason,
           notes: payload.notes,
-          veterinarianId: payload.veterinarianId,
+          veterinarianCedula: payload.veterinarianCedula,
         });
       } else {
         await appointmentsApi.create(payload);
@@ -116,7 +137,7 @@ export default function AppointmentsPage() {
           <Field label="" className="m-0 w-full sm:w-64">
             <Select value={status} onChange={e => { setStatus(e.target.value as AppointmentStatus | ""); setPage(0); }}>
               <option value="">Todos los estados</option>
-              {(["SCHEDULED","CONFIRMED","COMPLETED","CANCELLED","NO_SHOW"] as AppointmentStatus[]).map(s => (
+              {(["SCHEDULED","COMPLETED","CANCELLED"] as AppointmentStatus[]).map(s => (
                 <option key={s} value={s}>{statusLabels[s]}</option>
               ))}
             </Select>
@@ -148,9 +169,29 @@ export default function AppointmentsPage() {
                 <div><p className="text-zinc-500">Motivo</p><p className="font-medium">{a.reason}</p></div>
               </div>
               <div className="mt-4 flex justify-end gap-2">
-                <button onClick={() => { setEditing(a); setOpen(true); }} className={buttonClasses("secondary", "sm")}>Editar</button>
-                <button onClick={() => void handleCancel(a.id)} className={buttonClasses("danger", "sm")}>Cancelar</button>
+                {user?.role === "ADMIN" && a.status === "SCHEDULED" ? (
+                  <button onClick={() => { setEditing(a); setOpen(true); }} className={buttonClasses("secondary", "sm")}>Editar</button>
+                ) : null}
+                {user?.role === "VETERINARIAN" && a.status === "SCHEDULED" ? (
+                  <button disabled={new Date(a.endAt).getTime() > Date.now()} onClick={() => { setCompletionTarget(a.id); setCompletionNotes(a.notes ?? ""); }} className={buttonClasses("primary", "sm")}>
+                    {new Date(a.endAt).getTime() > Date.now() ? "Al finalizar: marcar asistida" : "Marcar asistida"}
+                  </button>
+                ) : null}
+                {a.status === "SCHEDULED" && user?.role !== undefined ? (
+                  <button onClick={() => void handleCancel(a.id)} className={buttonClasses("danger", "sm")}>Cancelar</button>
+                ) : null}
               </div>
+              {completionTarget === a.id ? (
+                <div className="mt-4 space-y-3 border-t border-zinc-200 pt-4">
+                  <Field label="Notas de la cita" required>
+                    <Textarea required maxLength={5000} value={completionNotes} onChange={event => setCompletionNotes(event.target.value)} />
+                  </Field>
+                  <div className="flex justify-end gap-2">
+                    <button type="button" onClick={() => setCompletionTarget(null)} className={buttonClasses("secondary", "sm")}>Volver</button>
+                    <button type="button" onClick={() => void handleComplete(a.id)} disabled={!completionNotes.trim()} className={buttonClasses("primary", "sm")}>Finalizar cita</button>
+                  </div>
+                </div>
+              ) : null}
             </Card>
           ))}
         </div>
@@ -166,68 +207,9 @@ export default function AppointmentsPage() {
         </div>
       )}
 
-      <Modal open={open} onClose={()=>setOpen(false)} title={editing ? "Editar cita" : "Nueva cita"}>
-        <AppointmentForm initial={editing} onCancel={()=>setOpen(false)} onSave={handleSave} saving={saving} error={formError} />
+      <Modal open={open} onClose={()=>setOpen(false)} title={editing ? "Editar cita" : "Nueva cita"} contentClassName="max-w-5xl">
+        <CalendarAppointmentForm initial={editing} onCancel={()=>setOpen(false)} onSave={handleSave} saving={saving} error={formError} canChangeVeterinarian={!editing || user?.role !== "OWNER"} />
       </Modal>
     </div>
-  );
-}
-
-function AppointmentForm({
-  initial,
-  onCancel,
-  onSave,
-  saving,
-  error,
-}: {
-  initial?: Appointment | null;
-  onCancel: () => void;
-  onSave: (data: AppointmentPayload) => void;
-  saving: boolean;
-  error: string | null;
-}) {
-  const [form, setForm] = useState<AppointmentPayload>({
-    petId: initial?.petId ?? 0,
-    veterinarianId: initial?.veterinarianId ?? null,
-    scheduledAt: initial?.scheduledAt ? formatDateTimeInput(initial.scheduledAt) : "",
-    durationMinutes: initial?.durationMinutes ?? 30,
-    reason: initial?.reason ?? "",
-    notes: initial?.notes ?? "",
-  });
-
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (!form.petId) return;
-        if (!form.scheduledAt) return;
-        onSave({ ...form, scheduledAt: new Date(form.scheduledAt).toISOString() });
-      }}
-      className="space-y-4"
-    >
-      {error ? <Alert variant="error">{error}</Alert> : null}
-      <Field label="Mascota ID" required>
-        <Input type="number" value={form.petId || ""} onChange={e=>setForm(f=>({...f,petId: Number(e.target.value)}))} />
-      </Field>
-      <Field label="Veterinario ID">
-        <Input type="number" value={form.veterinarianId ?? ""} onChange={e=>setForm(f=>({...f,veterinarianId: e.target.value ? Number(e.target.value) : null}))} />
-      </Field>
-      <Field label="Fecha y hora" required>
-        <Input type="datetime-local" value={form.scheduledAt} onChange={e=>setForm(f=>({...f,scheduledAt: e.target.value}))} />
-      </Field>
-      <Field label="Duración minutos" required>
-        <Input type="number" value={form.durationMinutes} onChange={e=>setForm(f=>({...f,durationMinutes: Number(e.target.value)}))} />
-      </Field>
-      <Field label="Motivo" required>
-        <Input value={form.reason} onChange={e=>setForm(f=>({...f,reason: e.target.value}))} />
-      </Field>
-      <Field label="Notas">
-        <Textarea value={form.notes ?? ""} onChange={e=>setForm(f=>({...f,notes: e.target.value}))} />
-      </Field>
-      <div className="flex justify-end gap-2">
-        <button type="button" onClick={onCancel} className={buttonClasses("secondary","md")}>Cancelar</button>
-        <button type="submit" disabled={saving} className={buttonClasses("primary","md")}>{saving ? "Guardando..." : "Guardar"}</button>
-      </div>
-    </form>
   );
 }

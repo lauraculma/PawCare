@@ -46,6 +46,7 @@ class AuthServiceTest {
     @Test
     void registersOwnerAndReturnsToken() {
         when(userRepository.existsByEmailIgnoreCase("nuevo@pawcare.test")).thenReturn(false);
+        when(userRepository.existsByCedula("12345678")).thenReturn(false);
         when(passwordEncoder.encode("secreto123")).thenReturn("hash");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User user = invocation.getArgument(0);
@@ -56,7 +57,7 @@ class AuthServiceTest {
         when(jwtService.getExpirationMinutes()).thenReturn(120L);
 
         RegistrationResponse response = authService.register(new RegisterRequest(
-                "Tutor Nuevo", "Nuevo@PawCare.test", "secreto123", "3000000000", null));
+                "Tutor Nuevo", "Nuevo@PawCare.test", "secreto123", "3000000000", "12345678", null));
 
         assertThat(response.requiresApproval()).isFalse();
         assertThat(response.token()).isEqualTo("token");
@@ -70,6 +71,7 @@ class AuthServiceTest {
     @Test
     void registersVeterinarianWithoutIssuingTokenUntilApproved() {
         when(userRepository.existsByEmailIgnoreCase("vet@pawcare.test")).thenReturn(false);
+        when(userRepository.existsByCedula("87654321")).thenReturn(false);
         when(passwordEncoder.encode("secreto123")).thenReturn("hash");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User user = invocation.getArgument(0);
@@ -78,7 +80,7 @@ class AuthServiceTest {
         });
 
         RegistrationResponse response = authService.register(new RegisterRequest(
-                "Veterinario", "vet@pawcare.test", "secreto123", null, Role.VETERINARIAN));
+                "Veterinario", "vet@pawcare.test", "secreto123", null, "87654321", Role.VETERINARIAN));
 
         assertThat(response.requiresApproval()).isTrue();
         assertThat(response.token()).isNull();
@@ -104,7 +106,7 @@ class AuthServiceTest {
         when(userRepository.existsByEmailIgnoreCase("dup@pawcare.test")).thenReturn(true);
 
         assertThatThrownBy(() -> authService.register(new RegisterRequest(
-                "Duplicado", "dup@pawcare.test", "secreto123", null, null)))
+                "Duplicado", "dup@pawcare.test", "secreto123", null, "12345678", null)))
                 .isInstanceOf(ConflictException.class);
     }
 
@@ -113,7 +115,7 @@ class AuthServiceTest {
         when(userRepository.existsByEmailIgnoreCase("admin@pawcare.test")).thenReturn(false);
 
         assertThatThrownBy(() -> authService.register(new RegisterRequest(
-                "Admin", "admin@pawcare.test", "secreto123", null, Role.ADMIN)))
+                "Admin", "admin@pawcare.test", "secreto123", null, "12345678", Role.ADMIN)))
                 .isInstanceOf(ForbiddenOperationException.class);
     }
 

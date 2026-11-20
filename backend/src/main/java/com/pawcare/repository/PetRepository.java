@@ -4,6 +4,9 @@ import com.pawcare.entity.Pet;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -40,7 +43,13 @@ public interface PetRepository extends JpaRepository<Pet, Long>, JpaSpecificatio
 
     Optional<Pet> findByIdAndActiveTrue(Long id);
 
+    Optional<Pet> findByPublicIdAndActiveTrue(String publicId);
+
     boolean existsByCollarIdIgnoreCase(String collarId);
 
     boolean existsByCollarIdIgnoreCaseAndIdNot(String collarId, Long id);
+
+    @Modifying
+    @Query("delete from Pet p where p.owner.id = :ownerId")
+    void deleteAllByOwnerId(@Param("ownerId") Long ownerId);
 }

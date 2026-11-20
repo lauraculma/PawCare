@@ -2,10 +2,8 @@ export type Role = "ADMIN" | "VETERINARIAN" | "OWNER";
 
 export type AppointmentStatus =
   | "SCHEDULED"
-  | "CONFIRMED"
   | "COMPLETED"
-  | "CANCELLED"
-  | "NO_SHOW";
+  | "CANCELLED";
 
 export type AlertSeverity = "WARNING" | "CRITICAL";
 
@@ -28,11 +26,13 @@ export interface PageResponse<T> {
 }
 
 export interface User {
-  id: number;
+  id: string;
+  internalId: number;
   fullName: string;
   email: string;
   role: Role;
   phone?: string | null;
+  cedula: string;
   approved: boolean;
 }
 
@@ -56,7 +56,15 @@ export interface RegisterPayload {
   email: string;
   password: string;
   phone?: string;
+  cedula: string;
   role?: Role;
+}
+
+export interface AdminUserUpdatePayload {
+  fullName: string;
+  email: string;
+  cedula: string;
+  phone?: string;
 }
 
 export interface LoginPayload {
@@ -65,13 +73,15 @@ export interface LoginPayload {
 }
 
 export interface OwnerSummary {
-  id: number;
+  id: string;
   fullName: string;
   email: string;
+  cedula?: string | null;
 }
 
 export interface Pet {
   id: number;
+  publicId: string;
   owner: OwnerSummary;
   name: string;
   species: string;
@@ -94,16 +104,19 @@ export interface PetPayload {
   sex?: string;
   collarId?: string;
   notes?: string;
-  ownerId?: number | null;
+  ownerCedula?: string | null;
 }
 
 export interface Appointment {
   id: number;
   petId: number;
+  petPublicId: string;
   petName: string;
   petSpecies: string;
   owner: OwnerSummary;
-  veterinarianId: number;
+  veterinarianId: string;
+  veterinarianInternalId: number;
+  veterinarianCedula: string;
   veterinarianName: string;
   scheduledAt: string;
   endAt: string;
@@ -116,12 +129,30 @@ export interface Appointment {
 }
 
 export interface AppointmentPayload {
-  petId: number;
-  veterinarianId?: number | null;
+  petPublicId: string;
+  veterinarianCedula?: string | null;
   scheduledAt: string;
   durationMinutes: number;
   reason: string;
   notes?: string;
+}
+
+export interface VeterinarianOption {
+  cedula: string;
+  fullName: string;
+}
+
+export interface AvailabilitySlot {
+  time: string;
+  veterinarianCedula: string;
+  veterinarianName: string;
+}
+
+export interface NearestAvailability extends AvailabilitySlot { date: string; }
+
+export interface VeterinarianSchedule {
+  veterinarian: User;
+  shifts: { dayOfWeek: number; startTime: string }[];
 }
 
 export interface AppointmentUpdatePayload {
@@ -129,7 +160,7 @@ export interface AppointmentUpdatePayload {
   durationMinutes: number;
   reason: string;
   notes?: string;
-  veterinarianId?: number | null;
+  veterinarianCedula?: string | null;
 }
 
 export interface ClinicalRecord {

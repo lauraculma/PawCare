@@ -5,6 +5,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import jakarta.persistence.criteria.Predicate;
@@ -12,6 +15,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public interface AlertRepository extends JpaRepository<Alert, Long>, JpaSpecificationExecutor<Alert> {
+
+    @Modifying
+    @Query("update Alert a set a.acknowledgedBy = null where a.acknowledgedBy.id = :userId")
+    void clearAcknowledgedBy(@Param("userId") Long userId);
 
     default Page<Alert> search(Long ownerId, Long petId, Boolean acknowledged, Pageable pageable) {
         Specification<Alert> specification = (root, query, criteriaBuilder) -> {

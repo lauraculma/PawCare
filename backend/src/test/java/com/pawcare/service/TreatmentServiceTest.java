@@ -115,7 +115,7 @@ class TreatmentServiceTest {
         TreatmentResponse response = treatmentService.get(5L, principal(owner));
 
         assertThat(response.id()).isEqualTo(5L);
-        assertThat(response.owner().id()).isEqualTo(7L);
+        assertThat(response.owner().id()).isEqualTo("10000007");
     }
 
     @Test
@@ -175,6 +175,7 @@ class TreatmentServiceTest {
         user.setId(id);
         user.setFullName("Usuario " + id);
         user.setEmail("user" + id + "@pawcare.test");
+        user.setCedula("1000000" + id);
         user.setRole(role);
         user.setActive(true);
         return user;

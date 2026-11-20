@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
+import java.util.Collection;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
@@ -14,5 +15,17 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByEmailIgnoreCase(String email);
 
+    boolean existsByCedula(String cedula);
+
+    boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
+
+    boolean existsByCedulaAndIdNot(String cedula, Long id);
+
+    Page<User> findByRoleIn(Collection<Role> roles, Pageable pageable);
+
+    Optional<User> findByCedula(String cedula);
+
     Page<User> findAllByRoleAndApprovedFalseOrderByCreatedAtAsc(Role role, Pageable pageable);
+
+    java.util.List<User> findAllByRoleAndApprovedTrueAndActiveTrueOrderByFullNameAsc(Role role);
 }

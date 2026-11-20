@@ -85,7 +85,7 @@ class PetServiceTest {
 
         PetResponse response = petService.create(petRequest(null), principal(owner));
 
-        assertThat(response.owner().id()).isEqualTo(7L);
+        assertThat(response.owner().id()).isEqualTo("10000007");
         assertThat(response.collarId()).isEqualTo("PAW-001");
     }
 
@@ -133,8 +133,8 @@ class PetServiceTest {
         verify(petRepository).search(null, "luna", pageable);
     }
 
-    private PetRequest petRequest(Long ownerId) {
-        return new PetRequest("Luna", "Perro", "Mestiza", null, null, "Hembra", "PAW-001", null, ownerId);
+    private PetRequest petRequest(String ownerCedula) {
+        return new PetRequest("Luna", "Perro", "Mestiza", null, null, "Hembra", "PAW-001", null, ownerCedula);
     }
 
     private User user(Long id, Role role) {
@@ -142,6 +142,7 @@ class PetServiceTest {
         user.setId(id);
         user.setFullName("Usuario " + id);
         user.setEmail("user" + id + "@pawcare.test");
+        user.setCedula("1000000" + id);
         user.setRole(role);
         user.setActive(true);
         return user;

@@ -86,7 +86,7 @@ export default function PendingVeterinariansPage() {
       ) : (
         <div className="grid gap-4">
           {pending.map((candidate) => (
-            <Card key={candidate.id}>
+            <Card key={candidate.internalId}>
               <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div>
                   <h2 className="font-semibold text-zinc-900">{candidate.fullName}</h2>
@@ -94,8 +94,8 @@ export default function PendingVeterinariansPage() {
                   {candidate.phone ? <p className="mt-1 text-sm text-zinc-500">Telefono: {candidate.phone}</p> : null}
                   <p className="mt-1 text-xs text-amber-700">Pendiente de aprobacion</p>
                 </div>
-                <button type="button" disabled={busyId !== null} onClick={() => void approve(candidate.id)} className={buttonClasses("primary", "md")}>
-                  {busyId === candidate.id ? "Aprobando..." : "Aprobar cuenta"}
+                <button type="button" disabled={busyId !== null} onClick={() => void approve(candidate.internalId)} className={buttonClasses("primary", "md")}>
+                  {busyId === candidate.internalId ? "Aprobando..." : "Aprobar cuenta"}
                 </button>
               </div>
             </Card>
