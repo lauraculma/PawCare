@@ -49,6 +49,37 @@ export default function OwnerCollarPanel() {
   const [locating, setLocating] = useState(false);
   const [refreshingPets, setRefreshingPets] = useState<number[]>([]);
 
+  const requestDeviceLocation = useCallback(() => {
+    setLocationError(null);
+    if (!window.isSecureContext) {
+      setLocationError("La ubicación requiere HTTPS (o abrir PawCare en este mismo dispositivo mediante localhost).");
+      return;
+    }
+    if (!navigator.geolocation) {
+      setLocationError("Este navegador no permite consultar la ubicación del dispositivo.");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        setLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          capturedAt: new Date().toISOString(),
+        });
+        setLocating(false);
+      },
+      positionError => {
+        const message = positionError.code === positionError.PERMISSION_DENIED
+          ? "No se concedió permiso para consultar la ubicación. Puedes habilitarlo en el navegador e intentarlo de nuevo."
+          : "No fue posible obtener la ubicación. Verifica el permiso y la conexión del dispositivo.";
+        setLocationError(message);
+        setLocating(false);
+      },
+      { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 },
+    );
+  }, []);
+
   useEffect(() => {
     let active = true;
     Promise.resolve().then(async () => {
@@ -80,38 +111,7 @@ export default function OwnerCollarPanel() {
       }
     });
     return () => { active = false; };
-  }, []);
-
-  const requestDeviceLocation = useCallback(() => {
-    setLocationError(null);
-    if (!window.isSecureContext) {
-      setLocationError("La ubicación requiere HTTPS (o abrir PawCare en este mismo dispositivo mediante localhost).");
-      return;
-    }
-    if (!navigator.geolocation) {
-      setLocationError("Este navegador no permite consultar la ubicación del dispositivo.");
-      return;
-    }
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      position => {
-        setLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          capturedAt: new Date().toISOString(),
-        });
-        setLocating(false);
-      },
-      positionError => {
-        const message = positionError.code === positionError.PERMISSION_DENIED
-          ? "No se concedió permiso para consultar la ubicación. Puedes habilitarlo en el navegador e intentarlo de nuevo."
-          : "No fue posible obtener la ubicación. Verifica el permiso y la conexión del dispositivo.";
-        setLocationError(message);
-        setLocating(false);
-      },
-      { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 },
-    );
-  }, []);
+  }, [requestDeviceLocation]);
 
   async function refreshVitals(petId: number) {
     setRefreshingPets(current => [...current, petId]);
