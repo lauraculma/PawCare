@@ -51,50 +51,69 @@ export default function CalendarAppointmentForm({
   useEffect(() => {
     if (mode !== "NEAREST") return;
     let active = true;
-    setLoadingAvailability(true);
-    setFormError(null);
-    void appointmentsApi.nearestAvailability(todayLocal(), initial?.id)
-      .then(result => {
+    Promise.resolve().then(async () => {
+      if (!active) return;
+      setLoadingAvailability(true);
+      setFormError(null);
+      try {
+        const result = await appointmentsApi.nearestAvailability(todayLocal(), initial?.id);
         if (!active) return;
         setDate(result.date);
         setMonth(result.date.slice(0, 7));
         setTime(result.time);
         setSelectedVetCedula(result.veterinarianCedula);
-      })
-      .catch(e => { if (active) setFormError(getErrorMessage(e)); })
-      .finally(() => { if (active) setLoadingAvailability(false); });
+      } catch (e) {
+        if (active) setFormError(getErrorMessage(e));
+      } finally {
+        if (active) setLoadingAvailability(false);
+      }
+    });
     return () => { active = false; };
   }, [mode, initial?.id]);
 
   useEffect(() => {
     let active = true;
-    const vetFilter = mode === "VETERINARIAN" || (!canChangeVeterinarian && mode !== "NEAREST")
-      ? selectedVetCedula || undefined : undefined;
-    if ((mode === "VETERINARIAN" || (!canChangeVeterinarian && mode !== "NEAREST")) && !vetFilter) {
-      setAvailableDates([]);
-      setLoadingDates(false);
-      return;
-    }
-    setLoadingDates(true);
-    void appointmentsApi.availableDates(month, vetFilter, initial?.id)
-      .then(result => { if (active) setAvailableDates(result); })
-      .catch(e => { if (active) setFormError(getErrorMessage(e)); })
-      .finally(() => { if (active) setLoadingDates(false); });
+    Promise.resolve().then(async () => {
+      if (!active) return;
+      const requiresVet = mode === "VETERINARIAN" || (!canChangeVeterinarian && mode !== "NEAREST");
+      const vetFilter = requiresVet ? selectedVetCedula || undefined : undefined;
+      if (requiresVet && !vetFilter) {
+        setAvailableDates([]);
+        setLoadingDates(false);
+        return;
+      }
+      setLoadingDates(true);
+      try {
+        const result = await appointmentsApi.availableDates(month, vetFilter, initial?.id);
+        if (active) setAvailableDates(result);
+      } catch (e) {
+        if (active) setFormError(getErrorMessage(e));
+      } finally {
+        if (active) setLoadingDates(false);
+      }
+    });
     return () => { active = false; };
   }, [month, mode, selectedVetCedula, initial?.id, canChangeVeterinarian]);
 
   useEffect(() => {
-    setSlots([]);
-    if (!date) { setLoadingAvailability(false); return; }
-    const vetFilter = mode === "VETERINARIAN" || mode === "NEAREST" || !canChangeVeterinarian
-      ? selectedVetCedula || undefined : undefined;
-    if ((mode === "VETERINARIAN" || mode === "NEAREST" || !canChangeVeterinarian) && !vetFilter) return;
     let active = true;
-    setLoadingAvailability(true);
-    void appointmentsApi.availability(date, vetFilter, initial?.id)
-      .then(result => { if (active) { setSlots(result); setFormError(null); } })
-      .catch(e => { if (active) setFormError(getErrorMessage(e)); })
-      .finally(() => { if (active) setLoadingAvailability(false); });
+    Promise.resolve().then(async () => {
+      if (!active) return;
+      setSlots([]);
+      if (!date) { setLoadingAvailability(false); return; }
+      const requiresVet = mode === "VETERINARIAN" || mode === "NEAREST" || !canChangeVeterinarian;
+      const vetFilter = requiresVet ? selectedVetCedula || undefined : undefined;
+      if (requiresVet && !vetFilter) { setLoadingAvailability(false); return; }
+      setLoadingAvailability(true);
+      try {
+        const result = await appointmentsApi.availability(date, vetFilter, initial?.id);
+        if (active) { setSlots(result); setFormError(null); }
+      } catch (e) {
+        if (active) setFormError(getErrorMessage(e));
+      } finally {
+        if (active) setLoadingAvailability(false);
+      }
+    });
     return () => { active = false; };
   }, [date, mode, selectedVetCedula, initial?.id, canChangeVeterinarian]);
 

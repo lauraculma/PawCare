@@ -47,7 +47,11 @@ export default function AdminUsersPage() {
   }, []);
 
   useEffect(() => {
-    if (user?.role === "ADMIN") void loadUsers();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active && user?.role === "ADMIN") void loadUsers();
+    });
+    return () => { active = false; };
   }, [user, loadUsers]);
 
   const visibleUsers = useMemo(() => {

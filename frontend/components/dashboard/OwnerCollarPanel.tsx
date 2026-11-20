@@ -58,6 +58,7 @@ export default function OwnerCollarPanel() {
         if (!active) return;
         setPets(ownedPets);
         setSelectedPetId(current => current || String(ownedPets.find(pet => !pet.collarId)?.id ?? ownedPets[0]?.id ?? ""));
+        if (ownedPets.some(pet => pet.collarId)) requestDeviceLocation();
         const measurements = await Promise.all(
           ownedPets.filter(pet => pet.collarId).map(async pet => {
             try {
@@ -179,12 +180,6 @@ export default function OwnerCollarPanel() {
   }
 
   const petsWithCollar = pets.filter(pet => pet.collarId);
-
-  useEffect(() => {
-    if (!loading && petsWithCollar.length > 0 && !location && !locating && !locationError) {
-      requestDeviceLocation();
-    }
-  }, [loading, petsWithCollar.length, location, locating, locationError, requestDeviceLocation]);
 
   return (
     <section className="space-y-4">

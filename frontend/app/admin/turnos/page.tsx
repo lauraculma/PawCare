@@ -40,7 +40,13 @@ export default function VeterinarianShiftsPage() {
     }
   }, []);
 
-  useEffect(() => { if (user?.role === "ADMIN") void load(); }, [user, load]);
+  useEffect(() => {
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active && user?.role === "ADMIN") void load();
+    });
+    return () => { active = false; };
+  }, [user, load]);
 
   async function save(veterinarianId: number) {
     setBusyId(veterinarianId);

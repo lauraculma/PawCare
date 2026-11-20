@@ -35,6 +35,7 @@ export default function AppointmentsPage() {
   const [saving, setSaving] = useState(false);
   const [completionTarget, setCompletionTarget] = useState<number | null>(null);
   const [completionNotes, setCompletionNotes] = useState("");
+  const [clockNow, setClockNow] = useState<number | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -63,6 +64,17 @@ export default function AppointmentsPage() {
     Promise.resolve().then(() => void load());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, status, user?.id]);
+
+  useEffect(() => {
+    let active = true;
+    const updateClock = () => setClockNow(Date.now());
+    Promise.resolve().then(() => { if (active) updateClock(); });
+    const interval = window.setInterval(updateClock, 30_000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, []);
 
   async function handleCancel(id: number) {
     setError(null);
@@ -154,7 +166,9 @@ export default function AppointmentsPage() {
 
       {!loading && data && data.content.length > 0 ? (
         <div className="mt-6 grid gap-4">
-          {data.content.map(a => (
+          {data.content.map(a => {
+            const canMarkAttended = clockNow !== null && new Date(a.endAt).getTime() <= clockNow;
+            return (
             <Card key={a.id}>
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <CardHeader title={`${a.petName} (${a.petSpecies})`} description={`Propietario: ${a.owner.fullName}`} />
@@ -173,8 +187,8 @@ export default function AppointmentsPage() {
                   <button onClick={() => { setEditing(a); setOpen(true); }} className={buttonClasses("secondary", "sm")}>Editar</button>
                 ) : null}
                 {user?.role === "VETERINARIAN" && a.status === "SCHEDULED" ? (
-                  <button disabled={new Date(a.endAt).getTime() > Date.now()} onClick={() => { setCompletionTarget(a.id); setCompletionNotes(a.notes ?? ""); }} className={buttonClasses("primary", "sm")}>
-                    {new Date(a.endAt).getTime() > Date.now() ? "Al finalizar: marcar asistida" : "Marcar asistida"}
+                  <button disabled={!canMarkAttended} onClick={() => { setCompletionTarget(a.id); setCompletionNotes(a.notes ?? ""); }} className={buttonClasses("primary", "sm")}>
+                    {canMarkAttended ? "Marcar asistida" : "Al finalizar: marcar asistida"}
                   </button>
                 ) : null}
                 {a.status === "SCHEDULED" && user?.role !== undefined ? (
@@ -193,7 +207,8 @@ export default function AppointmentsPage() {
                 </div>
               ) : null}
             </Card>
-          ))}
+            );
+          })}
         </div>
       ) : null}
 
