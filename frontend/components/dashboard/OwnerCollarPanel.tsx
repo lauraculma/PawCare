@@ -41,7 +41,8 @@ export default function OwnerCollarPanel() {
   const [selectedPetId, setSelectedPetId] = useState("");
   const [collarId, setCollarId] = useState("");
   const [location, setLocation] = useState<DeviceLocation | null>(null);
-  const [mapCenterVersion, setMapCenterVersion] = useState(0);
+  const [locationPanels, setLocationPanels] = useState<Record<number, boolean>>({});
+  const [mapCenterVersions, setMapCenterVersions] = useState<Record<number, number>>({});
   const [locationError, setLocationError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -211,7 +212,7 @@ export default function OwnerCollarPanel() {
 
       {petsWithCollar.length > 0 ? (
         <>
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid items-start gap-4 lg:grid-cols-2">
             {petsWithCollar.map(pet => {
               const reading = vitals[pet.id] ?? demoVitals[pet.id] ?? null;
               const isDemoReading = !vitals[pet.id] && Boolean(demoVitals[pet.id]);
@@ -232,63 +233,80 @@ export default function OwnerCollarPanel() {
                   ) : (
                     <p className="mt-4 rounded-lg bg-zinc-50 p-3 text-sm text-zinc-600">Aún no se reciben mediciones de este collar.</p>
                   )}
-                  <button type="button" onClick={() => void refreshVitals(pet.id)} disabled={refreshingPets.includes(pet.id)} className={`${buttonClasses("secondary", "sm")} mt-4`}>
-                    {refreshingPets.includes(pet.id) ? "Actualizando..." : "Actualizar mediciones"}
-                  </button>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => void refreshVitals(pet.id)} disabled={refreshingPets.includes(pet.id)} className={buttonClasses("secondary", "sm")}>
+                      {refreshingPets.includes(pet.id) ? "Actualizando..." : "Actualizar mediciones"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const willOpen = !locationPanels[pet.id];
+                        setLocationPanels(current => ({ ...current, [pet.id]: willOpen }));
+                        if (willOpen && !locating) requestDeviceLocation();
+                      }}
+                      className={buttonClasses("primary", "sm")}
+                    >
+                      {locationPanels[pet.id] ? "Ocultar ubicación" : "Ver ubicación"}
+                    </button>
+                  </div>
+                  {locationPanels[pet.id] ? (
+                    <div className="mt-4 border-t border-zinc-200 pt-4">
+                      <p className="mb-3 text-sm font-semibold text-zinc-800">Mapa de ubicación del dispositivo para la ficha de {pet.name}</p>
+                      {location ? (
+                        <div className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 shadow-sm">
+                          <iframe
+                            key={`${pet.id}-${mapCenterVersions[pet.id] ?? 0}`}
+                            title={`Mapa de ubicación del dispositivo para ${pet.name}`}
+                            src={`https://maps.google.com/maps?q=${location.latitude}%2C${location.longitude}&z=16&output=embed`}
+                            className="h-64 w-full sm:h-80"
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setMapCenterVersions(current => ({
+                              ...current,
+                              [pet.id]: (current[pet.id] ?? 0) + 1,
+                            }))}
+                            className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white/95 px-3 py-2 text-sm font-semibold text-zinc-800 shadow-md transition hover:bg-white"
+                            aria-label={`Centrar el mapa de ${pet.name} en la ubicación del dispositivo`}
+                          >
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-emerald-700">
+                              <circle cx="12" cy="12" r="7" />
+                              <circle cx="12" cy="12" r="2" />
+                              <path d="M12 2v3m0 14v3M2 12h3m14 0h3" />
+                            </svg>
+                            Centrar mapa
+                          </button>
+                          <span className="absolute bottom-3 left-3 rounded-lg bg-white/95 px-3 py-1.5 text-xs font-medium text-zinc-700 shadow">
+                            Ubicación del dispositivo
+                          </span>
+                        </div>
+                      ) : (
+                        <div role="status" className="flex h-56 items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50 px-5 text-center text-sm text-zinc-600">
+                          {locating ? "Consultando la ubicación para cargar el mapa..." : locationError ?? "Preparando el mapa de ubicación..."}
+                        </div>
+                      )}
+                      {location ? (
+                        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-700">
+                          <span>{location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}</span>
+                          <a className="font-medium text-emerald-700 underline" href={`https://www.google.com/maps?q=${location.latitude},${location.longitude}`} target="_blank" rel="noreferrer">Abrir en Google Maps</a>
+                          <span className="text-xs text-zinc-500">Actualizada {new Date(location.capturedAt).toLocaleTimeString("es-CO")}</span>
+                        </div>
+                      ) : null}
+                      {locationError ? <p role="status" className="mt-3 text-sm text-amber-800">{locationError}</p> : null}
+                      {!location || locationError ? (
+                        <button type="button" onClick={requestDeviceLocation} disabled={locating} className={`${buttonClasses("secondary", "sm")} mt-3`}>
+                          {locating ? "Consultando ubicación..." : "Intentar de nuevo"}
+                        </button>
+                      ) : null}
+                      <p className="mt-3 text-xs text-zinc-500">Es la ubicación del dispositivo que usa PawCare, no la ubicación GPS del collar ni de la mascota.</p>
+                    </div>
+                  ) : null}
                 </Card>
               );
             })}
           </div>
-
-          <Card>
-            <CardHeader title="Ubicación del dispositivo" description="Se consulta la ubicación del dispositivo que está usando PawCare; no es GPS del collar ni confirma dónde está la mascota." />
-            {location ? (
-              <div className="relative mt-4 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 shadow-sm">
-                <iframe
-                  key={mapCenterVersion}
-                  title="Mapa de ubicación del dispositivo"
-                  src={`https://maps.google.com/maps?q=${location.latitude}%2C${location.longitude}&z=16&output=embed`}
-                  className="h-72 w-full sm:h-[26rem]"
-                  loading="lazy"
-                  referrerPolicy="no-referrer"
-                />
-                <button
-                  type="button"
-                  onClick={() => setMapCenterVersion(version => version + 1)}
-                  className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white/95 px-3 py-2 text-sm font-semibold text-zinc-800 shadow-md transition hover:bg-white"
-                  aria-label="Centrar el mapa en la ubicación del dispositivo"
-                >
-                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-emerald-700">
-                    <circle cx="12" cy="12" r="7" />
-                    <circle cx="12" cy="12" r="2" />
-                    <path d="M12 2v3m0 14v3M2 12h3m14 0h3" />
-                  </svg>
-                  Centrar mapa
-                </button>
-                <span className="absolute bottom-3 left-3 rounded-lg bg-white/95 px-3 py-1.5 text-xs font-medium text-zinc-700 shadow">
-                  Ubicación del dispositivo
-                </span>
-              </div>
-            ) : (
-              <div role="status" className="mt-4 flex h-64 items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50 px-5 text-center text-sm text-zinc-600 sm:h-80">
-                {locating ? "Cargando el mapa y consultando la ubicación del dispositivo..." : locationError ?? "Preparando el mapa de ubicación..."}
-              </div>
-            )}
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <button type="button" onClick={requestDeviceLocation} disabled={locating} className={buttonClasses("secondary", "sm")}>
-                {locating ? "Consultando ubicación..." : location ? "Actualizar ubicación" : "Compartir ubicación del dispositivo"}
-              </button>
-              {location ? (
-                <div className="text-sm text-zinc-700">
-                  <p>{location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}</p>
-                  <a className="font-medium text-emerald-700 underline" href={`https://www.google.com/maps?q=${location.latitude},${location.longitude}`} target="_blank" rel="noreferrer">Abrir mapa</a>
-                  <span className="ml-2 text-xs text-zinc-500">Actualizada {new Date(location.capturedAt).toLocaleTimeString("es-CO")}</span>
-                </div>
-              ) : null}
-            </div>
-            {locationError ? <p role="status" className="mt-3 text-sm text-amber-800">{locationError}</p> : null}
-            <p className="mt-3 text-xs text-zinc-500">El navegador pedirá permiso. La ubicación solo se muestra en esta sesión.</p>
-          </Card>
         </>
       ) : null}
     </section>
